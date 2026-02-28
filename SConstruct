@@ -19,6 +19,24 @@ env.Append(**buildVars.addon_info)
 
 addonDir = Path("addon")
 
+# --- Compile translations (.po -> .mo) -------------------------------------
+
+import glob
+
+# Find all .po files under addon/locale
+poFiles = glob.glob("addon/locale/*/LC_MESSAGES/*.po")
+
+moFiles = []
+
+for po in poFiles:
+    mo = po[:-3] + ".mo"
+    moFile = env.Command(
+        target=mo,
+        source=po,
+        action="msgfmt -o $TARGET $SOURCE",
+    )
+    moFiles.append(moFile)
+
 # --- Validate required binaries -------------------------------------------
 
 eci_dir = addonDir / "synthDrivers" / "eloquence"
@@ -57,6 +75,7 @@ env.Depends(manifest, "buildVars.py")
 addonFile = env.File("${addon_name}-${addon_version}.nvda-addon")
 
 addon = env.NVDAAddon(addonFile, env.Dir(str(addonDir)))
+env.Depends(addon, moFiles)
 env.Depends(addon, manifest)
 
 # Depend on all source files in the addon tree so SCons rebuilds on changes.

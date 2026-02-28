@@ -63,6 +63,9 @@ from . import _text_preprocessing
 from collections import OrderedDict
 import unicodedata
 
+import addonHandler
+addonHandler.initTranslation()
+
 log = logging.getLogger(__name__)
 
 
@@ -118,6 +121,7 @@ variants = {
 
 
 class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
+    # Translators: Name of the category for this add-on in the settings dialog
     title = _("Eloquence")
 
     def makeSettings(self, settings):
@@ -130,6 +134,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
             }
 
             self.dictionaryChoice = sHelper.addLabeledControl(
+                # Translators: Label of a combobox in the Eloquence category of the settings dialog
                 _("Dictionary:"), wx.Choice, choices=list(self.dictionarySources.values())
             )
             self.dictionaryChoice.SetStringSelection(
@@ -139,6 +144,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
             )
 
             self.updateButton = sHelper.addItem(
+                # Translators: Label of a button in the Eloquence category of the settings dialog
                 wx.Button(self, label=_("Check for updates"))
             )
             self.Bind(wx.EVT_BUTTON, self.onUpdate, self.updateButton)
@@ -146,6 +152,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
             # Tool to automate copying eloquence_host32.exe for 64-bit NVDA secure screens
             self.copyHelperButton = sHelper.addItem(
                 wx.Button(
+                    # Translators: Label of a button in the Eloquence category of the settings dialog
                     self, label=_("Copy Helper to System Config (for Logon Screen)")
                 )
             )
@@ -153,6 +160,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 
             # NEW: Auto-update addon button
             self.addonUpdateButton = sHelper.addItem(
+                # Translators: Label of a button in the Eloquence category of the settings dialog
                 wx.Button(self, label=_("Check for Add-on Updates"))
             )
             self.Bind(wx.EVT_BUTTON, self.onCheckAddonUpdate, self.addonUpdateButton)
@@ -174,8 +182,10 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
         if not os.path.isdir(target_addon_dir):
             wx.MessageBox(
                 _(
+                    # Translators: Text of a message dialog when copying the helper to system config
                     "Eloquence folder not found in systemConfig.\n\nPlease go to NVDA Settings > General and click 'Use currently saved settings during sign-in' first to initialize folders."
                 ),
+                # Translators: Title of a message dialog when copying the helper to system config
                 _("Folder Missing"),
                 wx.OK | wx.ICON_WARNING,
             )
@@ -186,7 +196,9 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 
         if not os.path.exists(source_file):
             wx.MessageBox(
-                _(f"Source file not found at:\n{source_file}"),
+                # Translators: Text of a message dialog when copying the helper to system config
+                _("Source file not found at:\n{source_file}".format(source_file=source_file)),
+                # Translators: Title of a message dialog when copying the helper to system config
                 _("Error"),
                 wx.OK | wx.ICON_ERROR,
             )
@@ -208,8 +220,10 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
                 winsound.MessageBeep(winsound.MB_ICONASTERISK)
                 wx.MessageBox(
                     _(
+                        # Translators: text of a message dialog when copying the helper to system config
                         "Successfully copied eloquence_host32.exe to systemConfig!\n\nEloquence should now load normally on logon screen, start-up, and other secure screens."
                     ),
+                    # Translators: Title of a message dialog when copying the helper to system config
                     _("Success"),
                     wx.OK | wx.ICON_INFORMATION,
                 )
@@ -217,22 +231,28 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
                 # SE_ERR_ACCESSDENIED: Elevation prompt was declined
                 wx.MessageBox(
                     _(
+                        # Translators: Text of a message dialog when copying the helper to system config
                         "Copy process was cancelled or permission was denied by the user."
                     ),
+                    # Translators: Title of a message dialog when copying the helper to system config
                     _("Cancelled"),
                     wx.OK | wx.ICON_ERROR,
                 )
             else:
                 wx.MessageBox(
                     _(
-                        f"An error occurred while attempting to copy the file. (Error Code: {ret})"
+                        # Translators: Text of a message dialog when copying the helper to system config
+                        "An error occurred while attempting to copy the file. (Error Code: {ret})".format(ret=ret)
                     ),
+                    # Translators: Title of a message dialog when copying the helper to system config
                     _("Error"),
                     wx.OK | wx.ICON_ERROR,
                 )
         except Exception as e:
             wx.MessageBox(
-                _(f"An unexpected error occurred: {str(e)}"),
+                # Translators: Text of a message dialog when copying the helper to system config
+                _("An unexpected error occurred: {e}".format(e=str(e))),
+                # Translators: Title of a message dialog when copying the helper to system config
                 _("Error"),
                 wx.OK | wx.ICON_ERROR,
             )
@@ -249,7 +269,9 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
         # Check if updater exists
         if not os.path.exists(update_manager_path):
             wx.MessageBox(
+                # Translators: Text of a message dialog when updating the add-on
                 _("Update manager not found. Please reinstall the add-on."),
+                # Translators: Title of a message dialog when updating the add-on
                 _("Error"),
                 wx.OK | wx.ICON_ERROR,
             )
@@ -261,7 +283,9 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
             from _eloquence_updater import EloquenceUpdateManager, show_update_dialog
         except ImportError as e:
             wx.MessageBox(
-                _(f"Failed to load update manager: {e}"),
+                # Translators: Text of a message dialog when updating the add-on
+                _("Failed to load update manager: {e}".format(e=e)),
+                # Translators: Title of a message dialog when updating the add-on
                 _("Error"),
                 wx.OK | wx.ICON_ERROR,
             )
@@ -272,7 +296,9 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 
         # Create progress dialog
         progress = wx.ProgressDialog(
+            # Translators: Title of a progress dialog when updating the add-on
             _("Checking for Updates"),
+            # Translators: Message of a progress dialog when updating the add-on
             _("Connecting to GitHub..."),
             maximum=100,
             parent=self,
@@ -284,6 +310,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
             manager = EloquenceUpdateManager(addon_dir)
 
             # Check for updates
+            # Translators: Message of a progress dialog when updating the add-on
             progress.Update(10, _("Checking for updates..."))
             (
                 has_update,
@@ -293,27 +320,37 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
             ) = manager.check_for_updates()
 
             if not has_update:
+                # Translators: Message of a progress dialog when updating the add-on
                 progress.Update(100, _("No updates available"))
                 progress.Destroy()
                 wx.MessageBox(
+                    # Translators: Text of a message dialog when updating the add-on
                     _("You are using the latest version!"),
+                    # Translators: Title of a message dialog when updating the add-on
                     _("Up to Date"),
                     wx.OK | wx.ICON_INFORMATION,
                 )
                 return
 
             # Show changelog
+            # Translators: Text of a message dialog when updating the add-on
             progress.Update(20, _("Update available!"))
             progress.Destroy()
 
             changelog_dialog = wx.MessageDialog(
                 self,
                 _(
-                    f"New version available: {latest_version}\n\n"
-                    f"Current version: {manager.CURRENT_VERSION}\n\n"
-                    f"Changelog:\n{changelog[:500]}\n\n"
-                    f"Would you like to download and review the update?"
+                    # Translators: Text of a message dialog when updating the add-on
+                    "New version available: {latest_version}\n\n"
+                    "Current version: {currVersion}\n\n"
+                    "Changelog:\n{changelog}\n\n"
+                    "Would you like to download and review the update?"
+                ).format(
+                    latest_version=latest_version,
+                    currVersion=manager.CURRENT_VERSION,
+                    changelog=changelog[:500],
                 ),
+                # Translators: Title of a message dialog when updating the add-on
                 _("Update Available"),
                 wx.YES_NO | wx.ICON_INFORMATION,
             )
@@ -323,7 +360,9 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 
             # Download update
             progress = wx.ProgressDialog(
+                # Translators: Text of a progress dialog when updating the add-on
                 _("Downloading Update"),
+                # Translators: Title of a progress dialog when updating the add-on
                 _("Downloading..."),
                 maximum=100,
                 parent=self,
@@ -337,10 +376,12 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
             zip_path = manager.download_update(download_url, download_progress)
 
             # Extract update
+            # Translators: Text of a progress dialog when updating the add-on
             progress.Update(0, _("Extracting update..."))
             manager.extract_update(zip_path, download_progress)
 
             # Analyze changes
+            # Translators: Text of a progress dialog when updating the add-on
             progress.Update(0, _("Analyzing changes..."))
             changes = manager.analyze_changes(download_progress)
 
@@ -352,13 +393,16 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
             if not apply_update:
                 manager.cleanup()
                 wx.MessageBox(
+                    # Translators: Text of a message dialog when updating the add-on
                     _("Update cancelled."), _("Cancelled"), wx.OK | wx.ICON_INFORMATION
                 )
                 return
 
             # Apply update with progress
             progress = wx.ProgressDialog(
+                # Translators: Text of a progress dialog when updating the add-on
                 _("Applying Update"),
+                # Translators: Text of a progress dialog when updating the add-on
                 _("Please wait..."),
                 maximum=100,
                 parent=self,
@@ -375,9 +419,11 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
             # Success!
             wx.MessageBox(
                 _(
-                    f"Update to {latest_version} applied successfully!\n\n"
-                    f"Please restart NVDA for changes to take effect."
-                ),
+                    # Translators: Text of a message dialog when updating the add-on
+                    "Update to {latest_version} applied successfully!\n\n"
+                    "Please restart NVDA for changes to take effect."
+                ).format(latest_version=latest_version),
+                # Translators: Title of a message dialog when updating the add-on
                 _("Update Successful"),
                 wx.OK | wx.ICON_INFORMATION,
             )
@@ -390,8 +436,11 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
             log.error(f"Update failed: {e}")
             wx.MessageBox(
                 _(
-                    f"Update failed: {str(e)}\n\n" f"Your addon has not been modified."
-                ),
+                    # Translators: Text of a message dialog when updating the add-on
+                    "Update failed: {e}\n\n"
+                    "Your addon has not been modified."
+                ).format(e=str(e)),
+                # Translators: Title of a message dialog when updating the add-on
                 _("Update Failed"),
                 wx.OK | wx.ICON_ERROR,
             )
@@ -414,14 +463,18 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
         dictionary_url = config.conf.get("eloquence", {}).get("dictionary_url")
         if not dictionary_url:
             wx.MessageBox(
-                "Please select a dictionary first.", "Error", wx.OK | wx.ICON_ERROR
+                # Translators: Text of a message dialog when updating a dictionary
+                _("Please select a dictionary first."),
+                # Translators: Title of a message dialog when updating a dictionary
+                _("Error"),
+                wx.OK | wx.ICON_ERROR,
             )
             return
 
         try:
             # Add /archive/master.zip to the end of the URL to download the master branch
             zip_url = dictionary_url + "/archive/master.zip"
-            zip_path, _ = urllib.request.urlretrieve(zip_url)
+            zip_path, _unused = urllib.request.urlretrieve(zip_url)
 
             addon_dir = os.path.abspath(os.path.dirname(__file__))
             dest_folder = os.path.join(addon_dir, "eloquence")
@@ -627,24 +680,32 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
                     1 for f in os.listdir(dest_folder) if f.lower().endswith(".dic")
                 )
                 wx.MessageBox(
-                    f"Dictionary update successful!\n\n"
-                    f"• Total updates: {updates_count}\n"
-                    f"• Dictionary files: {new_files}\n\n"
-                    f"Note: CP1252 encoding enforced; some accents may have been stripped for compatibility.",
-                    "Success",
+                    _(
+                        # Translators: Text of a message dialog when updating a dictionary
+                        "Dictionary update successful!\n\n"
+                        "• Total updates: {updates_count}\n"
+                        "• Dictionary files: {new_files}\n\n"
+                        "Note: CP1252 encoding enforced; some accents may have been stripped for compatibility."
+                    ).format(updates_count=updates_count, new_files=new_files),
+                    # Translators: Title of a message dialog when updating a dictionary
+                    _("Success"),
                     wx.OK | wx.ICON_INFORMATION,
                 )
             else:
                 wx.MessageBox(
-                    "No new updates found. Your dictionaries are already up to date.",
-                    "Eloquence",
+                    # Translators: Text of a message dialog when updating a dictionary
+                    _("No new updates found. Your dictionaries are already up to date."),
+                    # Translators: Title of a message dialog when updating a dictionary
+                    _("Eloquence"),
                     wx.OK | wx.ICON_INFORMATION,
                 )
 
         except Exception as e:
             wx.MessageBox(
-                f"An error occurred while updating the dictionary: {e}",
-                "Error",
+                # Translators: Text of a message dialog when updating a dictionary
+                _("An error occurred while updating the dictionary: {e}").format(e=e),
+                # Translators: Title of a message dialog when updating a dictionary
+                _("Error"),
                 wx.OK | wx.ICON_ERROR,
             )
         pass
@@ -659,15 +720,22 @@ class SynthDriver(synthDriverHandler.SynthDriver):
         SynthDriver.PitchSetting(),
         SynthDriver.InflectionSetting(),
         SynthDriver.VolumeSetting(),
-        NumericDriverSetting("hsz", "Head Size"),
-        NumericDriverSetting("rgh", "Roughness"),
-        NumericDriverSetting("bth", "Breathiness"),
+        # Translators: A synth setting available in speech settings dialog
+        NumericDriverSetting("hsz", _("Hea&d size")),
+        # Translators: A synth setting available in speech settings dialog
+        NumericDriverSetting("rgh", _("Rou&ghness")),
+        # Translators: A synth setting available in speech settings dialog
+        NumericDriverSetting("bth", _("Breathi&ness")),
         BooleanDriverSetting(
-            "backquoteVoiceTags", "Enable backquote voice &tags", True
+            # Translators: A synth setting available in speech settings dialog
+            "backquoteVoiceTags", _("Enable backquote voice &tags"), True
         ),
-        BooleanDriverSetting("ABRDICT", "Enable &abbreviation dictionary", False),
-        BooleanDriverSetting("phrasePrediction", "Enable phrase prediction", False),
-        DriverSetting("pauseMode", "Pauses", defaultVal="0"),
+        # Translators: A synth setting available in speech settings dialog
+        BooleanDriverSetting("ABRDICT", _("Enable &abbreviation dictionary"), False),
+        # Translators: A synth setting available in speech settings dialog
+        BooleanDriverSetting("phrasePrediction", _("Enable phras&e prediction"), False),
+        # Translators: A synth setting available in speech settings dialog
+        DriverSetting("pauseMode", _("&Pauses"), defaultVal="0"),
     )
     supportedCommands = {
         IndexCommand,
@@ -949,9 +1017,12 @@ class SynthDriver(synthDriverHandler.SynthDriver):
     # 1: Standard timing with a p1 pause at the end of speech blocks only.
     # 2: Injects p1 at all punctuation for consistent Modern Shortening.
     _pauseModes = {
-        "0": StringParameterInfo("0", "Do not shorten"),
-        "1": StringParameterInfo("1", "Shorten at end only"),
-        "2": StringParameterInfo("2", "Shorten all pauses"),
+        # Translators: One of the mode listed in the pause combobox synth setting available in speech settings dialog
+        "0": StringParameterInfo("0", _("Do not shorten")),
+        # Translators: One of the mode listed in the pause combobox synth setting available in speech settings dialog
+        "1": StringParameterInfo("1", _("Shorten at end only")),
+        # Translators: One of the mode listed in the pause combobox synth setting available in speech settings dialog
+        "2": StringParameterInfo("2", _("Shorten all pauses")),
     }
 
     def _get_availablePausemodes(self):

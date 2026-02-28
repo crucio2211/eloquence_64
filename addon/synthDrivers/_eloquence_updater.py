@@ -19,29 +19,36 @@ except ImportError:
 
 class UpdateChangesDialog(wx.Dialog):
     def __init__(self, parent, changes, latest_version):
+        # Translators: Title of the Review Update Changes dialog used during add-on update.
         super().__init__(parent, title=_("Review Update Changes"), size=(500, 400))
         
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         
         # Summary text
-        summary = _(f"Update to version {latest_version} includes the following changes:")
+        # Translators: Text in the Review Update Changes dialog used during add-on update.
+        summary = _("Update to version {latest_version} includes the following changes:").format(latest_version=latest_version)
         main_sizer.Add(wx.StaticText(self, label=summary), 0, wx.ALL, 10)
         
         # List of changes
         self.list_ctrl = wx.ListCtrl(self, style=wx.LC_REPORT | wx.BORDER_SUNKEN)
+        # Translators: Column header in the Review Update Changes dialog used during add-on update.
         self.list_ctrl.InsertColumn(0, _("Action"), width=100)
+        # Translators: Column header in the Review Update Changes dialog used during add-on update.
         self.list_ctrl.InsertColumn(1, _("File"), width=350)
         
         idx = 0
         for f in changes["added"]:
+            # Translators: Action name used in the list of the Review Update Changes dialog used during add-on update.
             self.list_ctrl.InsertItem(idx, _("Add"))
             self.list_ctrl.SetItem(idx, 1, f)
             idx += 1
         for f in changes["modified"]:
+            # Translators: Action name used in the list of the Review Update Changes dialog used during add-on update.
             self.list_ctrl.InsertItem(idx, _("Update"))
             self.list_ctrl.SetItem(idx, 1, f)
             idx += 1
         for f in changes["deleted"]:
+            # Translators: Action name used in the list of the Review Update Changes dialog used during add-on update.
             self.list_ctrl.InsertItem(idx, _("Delete"))
             self.list_ctrl.SetItem(idx, 1, f)
             idx += 1
@@ -50,7 +57,8 @@ class UpdateChangesDialog(wx.Dialog):
         
         # Info about preserved files
         if changes["preserved"]:
-            p_text = _(f"Note: {len(changes['preserved'])} local configuration/dictionary files will be preserved.")
+            # Translators: Text in the Review Update Changes dialog used during add-on update.
+            p_text = _("Note: {n} local configuration/dictionary files will be preserved.").format(n=len(changes['preserved']))
             main_sizer.Add(wx.StaticText(self, label=p_text), 0, wx.ALL, 10)
             
         # Buttons
@@ -175,7 +183,8 @@ class EloquenceUpdateManager:
                         f.write(buffer)
                         if total_size > 0:
                             percent = int(downloaded * 100 / total_size)
-                            if not progress_callback(percent, _(f"Downloading update... {percent}%")):
+                            # Translators: Text in the progress dialog used during add-on update.
+                            if not progress_callback(percent, _("Downloading update... {percent}%").format(percent=percent)):
                                 raise Exception("Download cancelled by user")
             return zip_path
         except Exception as e:
@@ -195,7 +204,8 @@ class EloquenceUpdateManager:
                 for i, file in enumerate(files):
                     zip_ref.extract(file, self.extract_dir)
                     percent = int((i + 1) * 100 / total_files)
-                    if not progress_callback(percent, _(f"Extracting... {percent}%")):
+                    # Translators: Text in the progress dialog used during add-on update.
+                    if not progress_callback(percent, _("Extracting... {percent}%").format(percent=percent)):
                         raise Exception("Extraction cancelled by user")
                         
             # If it's a GitHub zipball, it extracts into a subfolder
@@ -282,6 +292,7 @@ class EloquenceUpdateManager:
                     if not is_preserved:
                         changes["deleted"].append(file_rel_path)
                         
+        # Translators: Text in the progress dialog used during add-on update.
         progress_callback(100, _("Analysis complete"))
         return changes
 
@@ -289,6 +300,7 @@ class EloquenceUpdateManager:
         """Applies the changes based on user decisions"""
         total_steps = len(decisions)
         if total_steps == 0:
+            # Translators: Text in the progress dialog used during add-on update.
             merge_progress(100, _("No changes to apply"))
             return
 
@@ -297,7 +309,8 @@ class EloquenceUpdateManager:
             dst = os.path.join(self.addon_dir, "../", file_rel_path)
             
             percent = int((i + 1) * 100 / total_steps)
-            merge_progress(percent, _(f"Applying: {file_rel_path}"))
+            # Translators: Text in the progress dialog used during add-on update.
+            merge_progress(percent, _("Applying: {path}").format(path=file_rel_path))
             
             try:
                 if action in ("update", "add"):
@@ -318,6 +331,7 @@ class EloquenceUpdateManager:
             except Exception as e:
                 log.error(f"Error applying change to {file_rel_path}: {e}")
         
+        # Translators: Text in the progress dialog used during add-on update.
         merge_progress(100, _("Update complete"))
 
     def cleanup(self):

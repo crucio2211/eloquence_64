@@ -1,8 +1,11 @@
 # Copyright (C) 2009-2019 eloquence fans
 # synthDrivers/eci.py
 # todo: possibly add to this
-import speech, tones, gui, wx
-import ctypes, winsound, shutil # Added for Copy Helper tool
+import gui
+import wx
+import ctypes
+import winsound
+import shutil  # Added for Copy Helper tool
 
 try:
 	from speech import (
@@ -39,25 +42,27 @@ except ImportError:
 try:
 	from autoSettingsUtils.utils import StringParameterInfo
 except ImportError:
+
 	class StringParameterInfo:
 		def __init__(self, value, label):
 			self.value = value
 			self.label = label
 
 
-punctuation = ",.?:;)(?!" 
+punctuation = ",.?:;)(?!"
 punctuation = [x for x in punctuation]
 from ctypes import *
 import ctypes.wintypes
-from ctypes import wintypes
-import synthDriverHandler, os, config, re, nvwave, threading, logging, driverHandler
+import synthDriverHandler
+import os
+import config
+import re
+import logging
 from synthDriverHandler import (
 	SynthDriver,
-	VoiceInfo,
 	synthIndexReached,
 	synthDoneSpeaking,
 )
-from synthDriverHandler import SynthDriver, VoiceInfo
 from . import _eloquence
 from . import _text_preprocessing
 from collections import OrderedDict
@@ -91,14 +96,10 @@ VOICE_BCP47 = {
 
 VOICE_CODE_TO_ID = {code: str(info[0]) for code, info in _eloquence.langs.items()}
 VOICE_ID_TO_BCP47 = {
-	voice_id: VOICE_BCP47.get(code)
-	for code, voice_id in VOICE_CODE_TO_ID.items()
-	if VOICE_BCP47.get(code)
+	voice_id: VOICE_BCP47.get(code) for code, voice_id in VOICE_CODE_TO_ID.items() if VOICE_BCP47.get(code)
 }
 LANGUAGE_TO_VOICE_ID = {
-	lang.lower(): VOICE_CODE_TO_ID[code]
-	for code, lang in VOICE_BCP47.items()
-	if code in VOICE_CODE_TO_ID
+	lang.lower(): VOICE_CODE_TO_ID[code] for code, lang in VOICE_BCP47.items() if code in VOICE_CODE_TO_ID
 }
 PRIMARY_LANGUAGE_TO_VOICE_IDS = {}
 for code, lang in VOICE_BCP47.items():
@@ -138,31 +139,22 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 				_("Dictionary:"), wx.Choice, choices=list(self.dictionarySources.values())
 			)
 			self.dictionaryChoice.SetStringSelection(
-				config.conf.get("eloquence", {}).get(
-					"dictionary_name", "Alternative IBM TTS Dictionaries"
-				)
+				config.conf.get("eloquence", {}).get("dictionary_name", "Alternative IBM TTS Dictionaries")
 			)
 
-			self.updateButton = sHelper.addItem(
-				# Translators: Label of a button in the Eloquence category of the settings dialog
-				wx.Button(self, label=_("Check for updates"))
-			)
+			self.updateButton = sHelper.addItem(wx.Button(self, label=_("Check for updates")))
 			self.Bind(wx.EVT_BUTTON, self.onUpdate, self.updateButton)
 
 			# Tool to automate copying eloquence_host32.exe for 64-bit NVDA secure screens
 			self.copyHelperButton = sHelper.addItem(
-				wx.Button(
-					# Translators: Label of a button in the Eloquence category of the settings dialog
-					self, label=_("Copy Helper to System Config (for Logon Screen)")
-				)
+				# Translators: Label of a button in the Eloquence category of the settings dialog
+				wx.Button(self, label=_("Copy Helper to System Config (for Logon Screen)"))
 			)
 			self.Bind(wx.EVT_BUTTON, self.onCopyHelper, self.copyHelperButton)
 
 			# NEW: Auto-update addon button
-			self.addonUpdateButton = sHelper.addItem(
-				# Translators: Label of a button in the Eloquence category of the settings dialog
-				wx.Button(self, label=_("Check for Add-on Updates"))
-			)
+			# Translators: Label of a button in the Eloquence category of the settings dialog
+			self.addonUpdateButton = sHelper.addItem(wx.Button(self, label=_("Check for Add-on Updates")))
 			self.Bind(wx.EVT_BUTTON, self.onCheckAddonUpdate, self.addonUpdateButton)
 		except Exception as e:
 			log.error(f"Error creating Eloquence settings panel: {e}")
@@ -170,9 +162,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 
 	def onCopyHelper(self, evt):
 		"""Copies eloquence_host32.exe with UAC elevation support and definitive feedback."""
-		source_file = os.path.normpath(
-			os.path.join(os.path.dirname(__file__), "eloquence_host32.exe")
-		)
+		source_file = os.path.normpath(os.path.join(os.path.dirname(__file__), "eloquence_host32.exe"))
 		prog_files = os.environ.get("ProgramFiles", "C:\\Program Files")
 		target_addon_dir = os.path.normpath(
 			os.path.join(prog_files, "NVDA", "systemConfig", "addons", "Eloquence")
@@ -205,15 +195,11 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 			return
 
 		# Prepare elevated command: ensure subdirectory exists and copy the helper
-		cmd_params = (
-			f'/c mkdir "{dest_dir}" 2>nul & copy /y "{source_file}" "{dest_file}"'
-		)
+		cmd_params = f'/c mkdir "{dest_dir}" 2>nul & copy /y "{source_file}" "{dest_file}"'
 
 		try:
 			# Triggering UAC Elevation using ShellExecuteW's "runas" verb
-			ret = ctypes.windll.shell32.ShellExecuteW(
-				None, "runas", "cmd.exe", cmd_params, None, 0
-			)
+			ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", cmd_params, None, 0)
 
 			if ret > 32:
 				# Play Windows Asterisk sound for confirmation of successful launch
@@ -230,20 +216,16 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 			elif ret == 5:
 				# SE_ERR_ACCESSDENIED: Elevation prompt was declined
 				wx.MessageBox(
-					_(
-						# Translators: Text of a message dialog when copying the helper to system config
-						"Copy process was cancelled or permission was denied by the user."
-					),
+					# Translators: Text of a message dialog when copying the helper to system config
+					_("Copy process was cancelled or permission was denied by the user."),
 					# Translators: Title of a message dialog when copying the helper to system config
 					_("Cancelled"),
 					wx.OK | wx.ICON_ERROR,
 				)
 			else:
 				wx.MessageBox(
-					_(
-						# Translators: Text of a message dialog when copying the helper to system config
-						"An error occurred while attempting to copy the file. (Error Code: {ret})".format(ret=ret)
-					),
+					# Translators: Text of a message dialog when copying the helper to system config
+					_("An error occurred while attempting to copy the file. (Error Code: {ret})").format(ret=ret),
 					# Translators: Title of a message dialog when copying the helper to system config
 					_("Error"),
 					wx.OK | wx.ICON_ERROR,
@@ -251,7 +233,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 		except Exception as e:
 			wx.MessageBox(
 				# Translators: Text of a message dialog when copying the helper to system config
-				_("An unexpected error occurred: {e}".format(e=str(e))),
+				_("An unexpected error occurred: {e}").format(e=str(e)),
 				# Translators: Title of a message dialog when copying the helper to system config
 				_("Error"),
 				wx.OK | wx.ICON_ERROR,
@@ -284,7 +266,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 		except ImportError as e:
 			wx.MessageBox(
 				# Translators: Text of a message dialog when updating the add-on
-				_("Failed to load update manager: {e}".format(e=e)),
+				_("Failed to load update manager: {e}").format(e=e),
 				# Translators: Title of a message dialog when updating the add-on
 				_("Error"),
 				wx.OK | wx.ICON_ERROR,
@@ -359,7 +341,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 				return
 
 			# Download update
-			progress = wx.ProgressDialog(
+			progress = wx.ProgressDialog(		
 				# Translators: Text of a progress dialog when updating the add-on
 				_("Downloading Update"),
 				# Translators: Title of a progress dialog when updating the add-on
@@ -394,7 +376,10 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 				manager.cleanup()
 				wx.MessageBox(
 					# Translators: Text of a message dialog when updating the add-on
-					_("Update cancelled."), _("Cancelled"), wx.OK | wx.ICON_INFORMATION
+					_("Update cancelled."),
+					# Translators: Text of a message dialog when updating the add-on
+					_("Cancelled"),
+					wx.OK | wx.ICON_INFORMATION,
 				)
 				return
 
@@ -456,8 +441,9 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 				break
 
 	def onUpdate(self, evt):
-		import urllib.request, zipfile, os, shutil, globalPluginHandler
-		from scriptHandler import script
+		import urllib.request
+		import zipfile
+		import os
 
 		self.onSave()
 		dictionary_url = config.conf.get("eloquence", {}).get("dictionary_url")
@@ -498,9 +484,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 				except UnicodeEncodeError:
 					# If not CP1252, fallback to stripping accents
 					return "".join(
-						c
-						for c in unicodedata.normalize("NFD", text)
-						if unicodedata.category(c) != "Mn"
+						c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn"
 					)
 
 			# --- HELPER: Extract Key/Word only (Cleaned) ---
@@ -540,7 +524,6 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 
 			# --- MAIN LOGIC ---
 			if os.path.exists(extracted_folder_path):
-
 				candidates = []
 				for root, dirs, files in os.walk(extracted_folder_path):
 					for f in files:
@@ -570,9 +553,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 									continue
 
 							if not read_success:
-								with open(
-									source_path, "r", encoding="iso-8859-1", errors="replace"
-								) as f:
+								with open(source_path, "r", encoding="iso-8859-1", errors="replace") as f:
 									source_lines = f.readlines()
 
 							# Process and strip accents from all lines
@@ -620,9 +601,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 								with open(dest_path, "r", encoding="utf-8") as f:
 									load_local_keys(f)
 							except UnicodeDecodeError:
-								with open(
-									dest_path, "r", encoding="mbcs", errors="ignore"
-								) as f:
+								with open(dest_path, "r", encoding="mbcs", errors="ignore") as f:
 									load_local_keys(f)
 
 						# 2. READ SOURCE WITH AUTO-DETECT
@@ -638,9 +617,7 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 								continue
 
 						if not read_success:
-							with open(
-								source_path, "r", encoding="iso-8859-1", errors="replace"
-							) as f:
+							with open(source_path, "r", encoding="iso-8859-1", errors="replace") as f:
 								source_lines = f.readlines()
 
 						# 3. FILTER, CLEAN, & FORMAT
@@ -676,15 +653,14 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 
 			if updates_count > 0:
 				# Count how many were new files vs updated entries
-				new_files = sum(
-					1 for f in os.listdir(dest_folder) if f.lower().endswith(".dic")
-				)
+				new_files = sum(1 for f in os.listdir(dest_folder) if f.lower().endswith(".dic"))
 				wx.MessageBox(
+					# Translators: Text of a message dialog when updating the add-on
 					_(
 						# Translators: Text of a message dialog when updating a dictionary
 						"Dictionary update successful!\n\n"
-						"• Total updates: {updates_count}\n"
-						"• Dictionary files: {new_files}\n\n"
+						"â€¢ Total updates: {updates_count}\n"
+						"â€¢ Dictionary files: {new_files}\n\n"
 						"Note: CP1252 encoding enforced; some accents may have been stripped for compatibility."
 					).format(updates_count=updates_count, new_files=new_files),
 					# Translators: Title of a message dialog when updating a dictionary
@@ -695,8 +671,8 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 				wx.MessageBox(
 					# Translators: Text of a message dialog when updating a dictionary
 					_("No new updates found. Your dictionaries are already up to date."),
-					# Translators: Title of a message dialog when updating a dictionary
-					_("Eloquence"),
+					# Translators: Title of a message dialog when updating a dictionary_("Eloquence"),
+					
 					wx.OK | wx.ICON_INFORMATION,
 				)
 
@@ -776,13 +752,8 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 		try:
 			if hasattr(gui.settingsDialogs, "NVDASettingsDialog"):
 				if hasattr(gui.settingsDialogs.NVDASettingsDialog, "categoryClasses"):
-					if (
-						EloquenceSettingsPanel
-						not in gui.settingsDialogs.NVDASettingsDialog.categoryClasses
-					):
-						gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(
-							EloquenceSettingsPanel
-						)
+					if EloquenceSettingsPanel not in gui.settingsDialogs.NVDASettingsDialog.categoryClasses:
+						gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(EloquenceSettingsPanel)
 		except Exception as e:
 			log.warning(f"Could not register Eloquence settings panel: {e}")
 			# Continue initialization - synth will work without settings panel
@@ -792,20 +763,14 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 			_eloquence.initialize(self._onIndexReached)
 			log.info("Eloquence: _eloquence.initialize completed successfully")
 		except Exception as e:
-			log.error(
-				f"Eloquence: Failed to initialize _eloquence module: {e}", exc_info=True
-			)
+			log.error(f"Eloquence: Failed to initialize _eloquence module: {e}", exc_info=True)
 			raise
 
 		try:
 			voice_param = _eloquence.params.get(9)
 			if voice_param is None:
-				configured_voice = (
-					config.conf.get("speech", {}).get("eci", {}).get("voice", "enu")
-				)
-				voice_info = _eloquence.langs.get(configured_voice) or _eloquence.langs.get(
-					"enu"
-				)
+				configured_voice = config.conf.get("speech", {}).get("eci", {}).get("voice", "enu")
+				voice_info = _eloquence.langs.get(configured_voice) or _eloquence.langs.get("enu")
 				voice_param = voice_info[0] if voice_info else 65536
 			self._update_voice_state(voice_param, update_default=True)
 			# Initialize _rate first before setting the rate property
@@ -815,9 +780,7 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 			self._pause_mode = 0
 			log.info("Eloquence: Initialization completed successfully")
 		except Exception as e:
-			log.error(
-				f"Eloquence: Failed during voice/parameter setup: {e}", exc_info=True
-			)
+			log.error(f"Eloquence: Failed during voice/parameter setup: {e}", exc_info=True)
 			raise
 
 	def terminate(self):
@@ -825,9 +788,7 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 		try:
 			if hasattr(gui.settingsDialogs, "NVDASettingsDialog"):
 				if hasattr(gui.settingsDialogs.NVDASettingsDialog, "categoryClasses"):
-					gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(
-						EloquenceSettingsPanel
-					)
+					gui.settingsDialogs.NVDASettingsDialog.categoryClasses.remove(EloquenceSettingsPanel)
 		except (ValueError, AttributeError) as e:
 			log.debug(f"Settings panel already removed or never registered: {e}")
 		except Exception as e:
@@ -898,9 +859,9 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 					ri = li + 1
 					ra = ck[li]
 					rb = ck[ri]
-					factor = 1.0 * coefficients[ra] + (
-						coefficients[rb] - coefficients[ra]
-					) * (self.rate - ra) / (rb - ra)
+					factor = 1.0 * coefficients[ra] + (coefficients[rb] - coefficients[ra]) * (
+						self.rate - ra
+					) / (rb - ra)
 				pFactor = factor * item.time
 				pFactor = int(pFactor)
 				outlist.append((_eloquence.speak, (f"`p{pFactor}.",)))
@@ -960,7 +921,7 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 			return
 
 		# Trailing Pause Logic from IBMTTS:
-		if last is not None and not last.rstrip()[-1] in punctuation:
+		if last is not None and last.rstrip()[-1] not in punctuation:
 			# Mode 0 uses p0 for legacy speed performance
 			# Mode 1 and 2 use p1 for standard modern speed
 			p_val = "0" if self._pause_mode == 0 else "1"
@@ -1017,12 +978,9 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 	# 1: Standard timing with a p1 pause at the end of speech blocks only.
 	# 2: Injects p1 at all punctuation for consistent Modern Shortening.
 	_pauseModes = {
-		# Translators: One of the mode listed in the pause combobox synth setting available in speech settings dialog
-		"0": StringParameterInfo("0", _("Do not shorten")),
-		# Translators: One of the mode listed in the pause combobox synth setting available in speech settings dialog
-		"1": StringParameterInfo("1", _("Shorten at end only")),
-		# Translators: One of the mode listed in the pause combobox synth setting available in speech settings dialog
-		"2": StringParameterInfo("2", _("Shorten all pauses")),
+		"0": StringParameterInfo("0", "Do not shorten"),
+		"1": StringParameterInfo("1", "Shorten at end only"),
+		"2": StringParameterInfo("2", "Shorten all pauses"),
 	}
 
 	def _get_availablePausemodes(self):
@@ -1117,9 +1075,7 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 			voice_code = name.lower()[:-4]
 			info = _eloquence.langs[voice_code]
 			language = VOICE_BCP47.get(voice_code)
-			o[str(info[0])] = synthDriverHandler.VoiceInfo(
-				str(info[0]), info[1], language
-			)
+			o[str(info[0])] = synthDriverHandler.VoiceInfo(str(info[0]), info[1], language)
 		return o
 
 	def _get_voice(self):
@@ -1140,9 +1096,7 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 		self.curvoice = voice_str
 		current_default = getattr(self, "_defaultVoice", None)
 		self._languageOverrideActive = (
-			(not update_default)
-			and current_default is not None
-			and voice_str != current_default
+			(not update_default) and current_default is not None and voice_str != current_default
 		)
 
 	def _resolve_voice_for_language(self, language):
@@ -1195,8 +1149,7 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 	def _getAvailableVariants(self):
 		global variants
 		return OrderedDict(
-			(str(id), synthDriverHandler.VoiceInfo(str(id), name))
-			for id, name in variants.items()
+			(str(id), synthDriverHandler.VoiceInfo(str(id), name)) for id, name in variants.items()
 		)
 
 	def _set_variant(self, v):

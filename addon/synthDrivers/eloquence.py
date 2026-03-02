@@ -58,6 +58,7 @@ import os
 import config
 import re
 import logging
+import globalVars
 from synthDriverHandler import (
 	SynthDriver,
 	synthIndexReached,
@@ -139,16 +140,27 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 
 			self.updateButton = sHelper.addItem(wx.Button(self, label=_("Check for updates")))
 			self.Bind(wx.EVT_BUTTON, self.onUpdate, self.updateButton)
+			# When NVDA is running in secure mode, one should not be able to save any setting to disk.
+			if globalVars.appArgs.secure:
+				self.updateButton.Disable()
 
 			# Tool to automate copying eloquence_host32.exe for 64-bit NVDA secure screens
 			self.copyHelperButton = sHelper.addItem(
 				wx.Button(self, label=_("Copy Helper to System Config (for Logon Screen)"))
 			)
 			self.Bind(wx.EVT_BUTTON, self.onCopyHelper, self.copyHelperButton)
+			# Copying helper from secure mode is not allowed, following "Use NVDA during sign-in" button behaviour in
+			# NVDA's General settings category.
+			if globalVars.appArgs.secure:
+				self.copyHelperButton.Disable()
+				
 
 			# NEW: Auto-update addon button
 			self.addonUpdateButton = sHelper.addItem(wx.Button(self, label=_("Check for Add-on Updates")))
 			self.Bind(wx.EVT_BUTTON, self.onCheckAddonUpdate, self.addonUpdateButton)
+			# Add-on updates are not allowed in secure mode.
+			if globalVars.appArgs.secure:
+				self.addonUpdateButton.Disable()
 		except Exception as e:
 			log.error(f"Error creating Eloquence settings panel: {e}")
 			# Panel creation failed, but don't crash - synth will still work
@@ -595,8 +607,8 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 				new_files = sum(1 for f in os.listdir(dest_folder) if f.lower().endswith(".dic"))
 				wx.MessageBox(
 					f"Dictionary update successful!\n\n"
-					f"• Total updates: {updates_count}\n"
-					f"• Dictionary files: {new_files}\n\n"
+					f"â€¢ Total updates: {updates_count}\n"
+					f"â€¢ Dictionary files: {new_files}\n\n"
 					f"Note: CP1252 encoding enforced; some accents may have been stripped for compatibility.",
 					"Success",
 					wx.OK | wx.ICON_INFORMATION,

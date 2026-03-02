@@ -100,6 +100,7 @@ pot = env.Command(
 		"--keyword=_ "
 		"--keyword=pgettext:1c,2 "
 		"--from-code=UTF-8 "
+		"--add-comments=Translators "
 		"--package-name=${addon_name} "
 		"--package-version=${addon_version} "
 		"-o $TARGET $SOURCES"

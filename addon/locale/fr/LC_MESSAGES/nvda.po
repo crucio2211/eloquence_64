@@ -1,0 +1,683 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the 'IBMTTS' package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Eloquence\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-03-02 16:18+0100\n"
+"PO-Revision-Date: 2026-03-02 16:20+0100\n"
+"Last-Translator: Michel Such <michelsuch93@gmail.com>\n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.8\n"
+"X-Poedit-Flags-xgettext: --add-comments=Translators:\n"
+"X-Poedit-Basepath: ../../../..\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#. Translators: Name of the category for this add-on in the settings dialog
+#. Translators: Title of a message dialog when updating a dictionary
+#: addon\synthDrivers\eloquence.py:127 addon\synthDrivers\eloquence.py:686
+msgid "Eloquence"
+msgstr "Eloquence"
+
+#. Translators: Label of a combobox in the Eloquence category of the settings dialog
+#: addon\synthDrivers\eloquence.py:140
+msgid "Dictionary:"
+msgstr "Dictionnaire :"
+
+#: addon\synthDrivers\eloquence.py:146
+msgid "Check for updates"
+msgstr "Vérifier les mises à jour"
+
+#. Translators: Label of a button in the Eloquence category of the settings dialog
+#: addon\synthDrivers\eloquence.py:155
+msgid "Copy Helper to System Config (for Logon Screen)"
+msgstr ""
+"Copier le helper dans la configuration système (pour l'écran de connexion)"
+
+#. Translators: Label of a button in the Eloquence category of the settings dialog
+#: addon\synthDrivers\eloquence.py:166
+msgid "Check for Add-on Updates"
+msgstr "Rechercher les mises à jour de l'extension"
+
+#. Translators: Text of a message dialog when copying the helper to system config
+#: addon\synthDrivers\eloquence.py:188
+msgid ""
+"Eloquence folder not found in systemConfig.\n"
+"\n"
+"Please go to NVDA Settings > General and click 'Use currently saved settings "
+"during sign-in' first to initialize folders."
+msgstr ""
+"Dossier Eloquence introuvable dans systemConfig.\n"
+"\n"
+"Veuillez accéder à Paramètres NVDA > Général et cliquez d'abord sur "
+"« Utiliser les paramètres actuellement enregistrés lors de la connexion » "
+"pour initialiser les dossiers."
+
+#. Translators: Title of a message dialog when copying the helper to system config
+#: addon\synthDrivers\eloquence.py:191
+msgid "Folder Missing"
+msgstr "Dossier manquant"
+
+#. Translators: Text of a message dialog when copying the helper to system config
+#: addon\synthDrivers\eloquence.py:202
+#, python-brace-format
+msgid ""
+"Source file not found at:\n"
+"{source_file}"
+msgstr ""
+"Fichier source introuvable à l'adresse :\n"
+"{source_file}"
+
+#. Translators: Title of a message dialog when copying the helper to system config
+#. Translators: Title of a message dialog when updating the add-on
+#. Translators: Title of a message dialog when updating a dictionary
+#: addon\synthDrivers\eloquence.py:204 addon\synthDrivers\eloquence.py:242
+#: addon\synthDrivers\eloquence.py:250 addon\synthDrivers\eloquence.py:269
+#: addon\synthDrivers\eloquence.py:283 addon\synthDrivers\eloquence.py:467
+#: addon\synthDrivers\eloquence.py:695
+msgid "Error"
+msgstr "Erreur"
+
+#. Translators: text of a message dialog when copying the helper to system config
+#: addon\synthDrivers\eloquence.py:222
+msgid ""
+"Successfully copied eloquence_host32.exe to systemConfig!\n"
+"\n"
+"Eloquence should now load normally on logon screen, start-up, and other "
+"secure screens."
+msgstr ""
+"eloquence_host32.exe a été copié avec succès dans systemConfig !\n"
+"\n"
+"Eloquence devrait désormais se charger normalement sur l'écran de connexion, "
+"de démarrage et sur d'autres écrans sécurisés."
+
+#. Translators: Title of a message dialog when copying the helper to system config
+#. Translators: Title of a message dialog when updating a dictionary
+#: addon\synthDrivers\eloquence.py:225 addon\synthDrivers\eloquence.py:678
+msgid "Success"
+msgstr "Succès"
+
+#. Translators: Text of a message dialog when copying the helper to system config
+#: addon\synthDrivers\eloquence.py:232
+msgid "Copy process was cancelled or permission was denied by the user."
+msgstr ""
+"Le processus de copie a été annulé ou l'autorisation a été refusée par "
+"l'utilisateur."
+
+#. Translators: Title of a message dialog when copying the helper to system config
+#. Translators: Text of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:234 addon\synthDrivers\eloquence.py:393
+msgid "Cancelled"
+msgstr "Annulé"
+
+#. Translators: Text of a message dialog when copying the helper to system config
+#: addon\synthDrivers\eloquence.py:240
+#, python-brace-format
+msgid ""
+"An error occurred while attempting to copy the file. (Error Code: {ret})"
+msgstr ""
+"Une erreur s'est produite en tentant de copier le fichier. (Code d'erreur : "
+"{ret})"
+
+#. Translators: Text of a message dialog when copying the helper to system config
+#: addon\synthDrivers\eloquence.py:248
+#, python-brace-format
+msgid "An unexpected error occurred: {e}"
+msgstr "Une erreur inattendue s'est produite : {e}"
+
+#. Translators: Text of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:267
+msgid "Update manager not found. Please reinstall the add-on."
+msgstr ""
+"Gestionnaire de mise à jour introuvable. Veuillez réinstaller l'extension."
+
+#. Translators: Text of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:281
+#, python-brace-format
+msgid "Failed to load update manager: {e}"
+msgstr "Échec du chargement du gestionnaire de mise à jour : {e}"
+
+#. Translators: Title of a progress dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:294
+msgid "Checking for Updates"
+msgstr "Vérification des mises à jour"
+
+#. Translators: Message of a progress dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:296
+msgid "Connecting to GitHub..."
+msgstr "Connexion à GitHub..."
+
+#. Translators: Message of a progress dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:308
+msgid "Checking for updates..."
+msgstr "Vérification des mises à jour..."
+
+#. Translators: Message of a progress dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:318
+msgid "No updates available"
+msgstr "Aucune mise à jour disponible"
+
+#. Translators: Text of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:322
+msgid "You are using the latest version!"
+msgstr "Vous utilisez la dernière version !"
+
+#. Translators: Title of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:324
+msgid "Up to Date"
+msgstr "Extension à jour"
+
+#. Translators: Text of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:331
+msgid "Update available!"
+msgstr "Une mise à jour est disponible !"
+
+#. Translators: Text of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:338
+#, python-brace-format
+msgid ""
+"New version available: {latest_version}\n"
+"\n"
+"Current version: {currVersion}\n"
+"\n"
+"Changelog:\n"
+"{changelog}\n"
+"\n"
+"Would you like to download and review the update?"
+msgstr ""
+"Nouvelle version disponible : {latest_version}\n"
+"\n"
+"Version actuelle : {currVersion}\n"
+"\n"
+"Journal des modifications :\n"
+"{changelog}\n"
+"\n"
+"Souhaitez-vous télécharger et consulter la mise à jour ?"
+
+#. Translators: Title of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:348
+msgid "Update Available"
+msgstr "Mise à jour disponible"
+
+#. Translators: Text of a progress dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:358
+msgid "Downloading Update"
+msgstr "Téléchargement de la mise à jour"
+
+#. Translators: Title of a progress dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:360
+msgid "Downloading..."
+msgstr "Téléchargement en cours..."
+
+#. Translators: Text of a progress dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:374
+msgid "Extracting update..."
+msgstr "Extraction de la mise à jour..."
+
+#. Translators: Text of a progress dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:379
+msgid "Analyzing changes..."
+msgstr "Analyse des changements..."
+
+#. Translators: Text of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:391
+msgid "Update cancelled."
+msgstr "Mise à jour annulée."
+
+#. Translators: Text of a progress dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:401
+msgid "Applying Update"
+msgstr "Application de la mise à jour"
+
+#. Translators: Text of a progress dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:403
+msgid "Please wait..."
+msgstr "Veuillez attendre..."
+
+#. Translators: Text of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:420
+#, python-brace-format
+msgid ""
+"Update to {latest_version} applied successfully!\n"
+"\n"
+"Please restart NVDA for changes to take effect."
+msgstr ""
+"La mise à jour vers {latest_version} a été appliquée avec succès !\n"
+"\n"
+"Veuillez redémarrer NVDA pour que les modifications prennent effet."
+
+#. Translators: Title of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:424
+msgid "Update Successful"
+msgstr "Succès de la mise à jour"
+
+#. Translators: Text of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:437
+#, python-brace-format
+msgid ""
+"Update failed: {e}\n"
+"\n"
+"Your addon has not been modified."
+msgstr ""
+"Échec de la mise à jour : {e}\n"
+"\n"
+"Votre extension n'a pas été modifiée."
+
+#. Translators: Title of a message dialog when updating the add-on
+#: addon\synthDrivers\eloquence.py:441
+msgid "Update Failed"
+msgstr "Échec de la mise à jour"
+
+#. Translators: Text of a message dialog when updating a dictionary
+#: addon\synthDrivers\eloquence.py:465
+msgid "Please select a dictionary first."
+msgstr "Veuillez d'abord sélectionner un dictionnaire."
+
+#. Translators: Text of a message dialog when updating a dictionary
+#: addon\synthDrivers\eloquence.py:672
+#, python-brace-format
+msgid ""
+"Dictionary update successful!\n"
+"\n"
+"• Total updates: {updates_count}\n"
+"• Dictionary files: {new_files}\n"
+"\n"
+"Note: CP1252 encoding enforced; some accents may have been stripped for "
+"compatibility."
+msgstr ""
+"La mise à jour du dictionnaire a été effectuée avec succès !\n"
+"\n"
+"• Total des mises à jour : {updates_count}\n"
+"• Fichiers dictionnaire : {new_files}\n"
+"\n"
+"Remarque : Le codage CP1252 a été appliqué ; certains accents peuvent avoir "
+"été supprimés pour des raisons de compatibilité."
+
+#. Translators: Text of a message dialog when updating a dictionary
+#: addon\synthDrivers\eloquence.py:684
+msgid "No new updates found. Your dictionaries are already up to date."
+msgstr ""
+"Aucune nouvelle mise à jour trouvée. Vos dictionnaires sont déjà à jour."
+
+#. Translators: Text of a message dialog when updating a dictionary
+#: addon\synthDrivers\eloquence.py:693
+#, python-brace-format
+msgid "An error occurred while updating the dictionary: {e}"
+msgstr "Une erreur s'est produite lors de la mise à jour du dictionnaire : {e}"
+
+#. Translators: A synth setting available in speech settings dialog
+#: addon\synthDrivers\eloquence.py:711
+msgid "Hea&d size"
+msgstr "Taille de la &tête"
+
+#. Translators: A synth setting available in speech settings dialog
+#: addon\synthDrivers\eloquence.py:713
+msgid "Rou&ghness"
+msgstr "E&nrouement"
+
+#. Translators: A synth setting available in speech settings dialog
+#: addon\synthDrivers\eloquence.py:715
+msgid "Breathi&ness"
+msgstr "&Respiration"
+
+#. Translators: A synth setting available in speech settings dialog
+#: addon\synthDrivers\eloquence.py:718
+msgid "Enable backquote voice &tags"
+msgstr "Activer les &balises de changement de voix"
+
+#. Translators: A synth setting available in speech settings dialog
+#: addon\synthDrivers\eloquence.py:721
+msgid "Enable &abbreviation dictionary"
+msgstr "Activer le &dictionnaire des abréviations"
+
+#. Translators: A synth setting available in speech settings dialog
+#: addon\synthDrivers\eloquence.py:723
+msgid "Enable phras&e prediction"
+msgstr "Activer la prédiction de phras&e"
+
+#. Translators: A synth setting available in speech settings dialog
+#: addon\synthDrivers\eloquence.py:725
+msgid "&Pauses"
+msgstr "&Pauses"
+
+#. Translators: One of the mode listed in the pause combobox synth setting available in speech settings dialog
+#: addon\synthDrivers\eloquence.py:993
+msgid "Do not shorten"
+msgstr "Ne pas réduire"
+
+#. Translators: One of the mode listed in the pause combobox synth setting available in speech settings dialog
+#: addon\synthDrivers\eloquence.py:995
+msgid "Shorten at end only"
+msgstr "Réduire seulement à la fin"
+
+#. Translators: One of the mode listed in the pause combobox synth setting available in speech settings dialog
+#: addon\synthDrivers\eloquence.py:997
+msgid "Shorten all pauses"
+msgstr "Réduire toutes les pauses"
+
+#. Translators: Title of the Review Update Changes dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:19
+msgid "Review Update Changes"
+msgstr "Examiner les modifications apportées à la mise à jour"
+
+#. Translators: Text in the Review Update Changes dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:25
+#, python-brace-format
+msgid "Update to version {latest_version} includes the following changes:"
+msgstr ""
+"La mise à jour vers la version {latest_version} inclut les modifications "
+"suivantes :"
+
+#. Translators: Column header in the Review Update Changes dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:31
+msgid "Action"
+msgstr "Action"
+
+#. Translators: Column header in the Review Update Changes dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:33
+msgid "File"
+msgstr "Fichier"
+
+#: addon\synthDrivers\_eloquence_updater.py:37
+msgid "Add"
+msgstr "Ajouter"
+
+#. Translators: Action name used in the list of the Review Update Changes dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:42
+msgid "Update"
+msgstr "Mise à jour"
+
+#. Translators: Action name used in the list of the Review Update Changes dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:47
+msgid "Delete"
+msgstr "Supprimer"
+
+#: addon\synthDrivers\_eloquence_updater.py:57
+#, python-brace-format
+msgid "Note: {n} local configuration/dictionary files will be preserved."
+msgstr ""
+"Remarque : {n} fichiers de configuration/dictionnaire locaux seront "
+"conservés."
+
+#. Translators: Text in the progress dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:186
+#, python-brace-format
+msgid "Downloading update... {percent}%"
+msgstr "Téléchargement de la mise à jour... {percent}%"
+
+#. Translators: Text in the progress dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:207
+#, python-brace-format
+msgid "Extracting... {percent}%"
+msgstr "Extraction... {percent}%"
+
+#. Translators: Text in the progress dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:297
+msgid "Analysis complete"
+msgstr "Analyse terminée"
+
+#. Translators: Text in the progress dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:305
+msgid "No changes to apply"
+msgstr "Aucun changement à appliquer"
+
+#. Translators: Text in the progress dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:314
+#, python-brace-format
+msgid "Applying: {path}"
+msgstr "Installation : {path}"
+
+#. Translators: Text in the progress dialog used during add-on update.
+#: addon\synthDrivers\_eloquence_updater.py:336
+msgid "Update complete"
+msgstr "Mise à jour terminée"
+
+#~ msgid "Would you like to download and review the update?"
+#~ msgstr "Souhaitez-vous télécharger et consulter la mise à jour ?"
+
+#~ msgid "Please restart NVDA for changes to take effect."
+#~ msgstr "Veuillez redémarrer NVDA pour que les modifications prennent effet."
+
+#~ msgid "Your addon has not been modified."
+#~ msgstr "Votre extension n'a pas été modifiée."
+
+#~ msgid "Castilian Spanish"
+#~ msgstr "Espagnol Espagne"
+
+#~ msgid "Latin American Spanish"
+#~ msgstr "Espagnol Latino-Américain"
+
+#~ msgid "Brazilian Portuguese"
+#~ msgstr "Portugais Brésil"
+
+#~ msgid "French"
+#~ msgstr "Français"
+
+#~ msgid "French Canadian"
+#~ msgstr "Français Canada"
+
+#~ msgid "Finnish"
+#~ msgstr "Finnois"
+
+#~ msgid "Chinese"
+#~ msgstr "Chinois"
+
+#~ msgid "Japanese"
+#~ msgstr "Japonais"
+
+#~ msgid "Korean"
+#~ msgstr "Coréen"
+
+#~ msgid "German"
+#~ msgstr "Allemand"
+
+#~ msgid "Italian"
+#~ msgstr "Italien"
+
+#~ msgid "American English"
+#~ msgstr "Anglais Américain"
+
+#~ msgid "British English"
+#~ msgstr "Anglais Britannique"
+
+#~ msgid "Swedish"
+#~ msgstr "Suédois"
+
+#~ msgid "Norwegian"
+#~ msgstr "Norvégien"
+
+#~ msgid "Danish"
+#~ msgstr "Danois"
+
+#~ msgid "Hong Kong Cantonese"
+#~ msgstr "Hong Kong Cantonais"
+
+#~ msgid "Rate boos&t"
+#~ msgstr "Voix t&urbo"
+
+#~ msgid "Al&ways Send Current Speech Settings"
+#~ msgstr "Tou&jours envoyer les paramètres vocaux"
+
+#~ msgid "Sa&mple Rate"
+#~ msgstr "Tau&x d'échantillonnage"
+
+#~ msgid ""
+#~ "Unable to download the file. Perhaps there is no internet access or the "
+#~ "server is not responding. Do you want to try again?"
+#~ msgstr ""
+#~ "Impossible de télécharger le fichier. Il n'y a peut-être pas d'accès à "
+#~ "Internet ou le serveur ne répond pas. Voulez-vous essayer à nouveau?"
+
+#~ msgid "Error downloading"
+#~ msgstr "Erreur de téléchargement"
+
+#~ msgid ""
+#~ "Unable to copy a file. Perhaps it is currently being used by another "
+#~ "process or you have run out of disc space on the drive you are copying to."
+#~ msgstr ""
+#~ "Impossible de copier un fichier. Peut-être qu'il est actuellement utilisé "
+#~ "par un autre processus ou que l'espace disque est insuffisant sur le "
+#~ "lecteur sur lequel vous effectuez la copie."
+
+#~ msgid "Error Copying"
+#~ msgstr "Erreur lors de la copie"
+
+#, python-format
+#~ msgid ""
+#~ "Failed to open add-on update file at %s - missing file or invalid file "
+#~ "format"
+#~ msgstr ""
+#~ "Impossible d'ouvrir le fichier de mise à jour de l'extension %s - fichier "
+#~ "manquant ou format de fichier non valide"
+
+#, python-format
+#~ msgid "Installing %s"
+#~ msgstr "Installation de %s"
+
+#~ msgid "Please wait while the add-on is being installed."
+#~ msgstr "Veuillez patienter durant l'installation de l'extension."
+
+#, python-format
+#~ msgid "Failed to install add-on from %s"
+#~ msgstr "Échec de l'installation de l'extension %s"
+
+#~ msgid "Unable to create the folder to save the update file."
+#~ msgstr ""
+#~ "Impossible de créer le dossier pour enregistrer le fichier de mise à jour."
+
+#, python-format
+#~ msgid "There are no updates available for the %s addon."
+#~ msgstr "Aucune mise à jour disponible pour l'extension %s"
+
+#, python-format
+#~ msgid ""
+#~ "A new version of %s was found. The new version is %s. Would you like to "
+#~ "update this add-on now?"
+#~ msgstr ""
+#~ "Une nouvelle version de %s a été trouvée. La nouvelle version est %s. "
+#~ "Souhaitez-vous mettre à jour cette extension maintenant ?"
+
+#~ msgid "IBMTTS"
+#~ msgstr "IBMTTS"
+
+#~ msgid "&Automatically check for updates for IBMTTS"
+#~ msgstr "Rechercher &automatiquement les mises à jour pour IBMTTS"
+
+#~ msgid "IBMTTS folder address"
+#~ msgstr "Adresse du dossier IBMTTS"
+
+#~ msgid "IBMTTS library name (dll)"
+#~ msgstr "Nom de la bibliothèque IBMTTS (dll)"
+
+#~ msgid "&Browse for  IBMTTS library..."
+#~ msgstr "&Rechercher une bibliothèque IBMTTS..."
+
+#~ msgid ""
+#~ "&Copy IBMTTS files in an  add-on (may not work for some IBMTTS "
+#~ "distributions)"
+#~ msgstr ""
+#~ "&Copier les fichiers IBMTTS dans une extension. (Cela ne fonctionne peut-"
+#~ "être pas pour certaines distributions IBMTTS)"
+
+#~ msgid "Select the IBMTTS library (dll)"
+#~ msgstr "Choisir la bibliothèque IBMTTS (dll)"
+
+#, python-brace-format
+#~ msgid "dynamic link library (*.{ext})"
+#~ msgstr "Bibliothèque de liens dynamiques (*.{ext})"
+
+#~ msgid ""
+#~ "The IBMTTS files location has been set. If you want  to use it with a "
+#~ "portable version of NVDA, please use the \"Copy IBMTTS files into driver "
+#~ "add-on\" button"
+#~ msgstr ""
+#~ "L'emplacement des fichiers IBMTTS a été défini. Si vous souhaitez "
+#~ "l'utiliser avec une version portable de NVDA, veuillez utiliser le bouton "
+#~ "\"Copiez les fichiers IBMTTS dans l'extension du pilote\"."
+
+#~ msgid ""
+#~ "The specified dll file seems to be an incorrect IBMTTS library. Would you "
+#~ "like to select another library?"
+#~ msgstr ""
+#~ "Le fichier dll spécifié semble être une bibliothèque IBMTTS incorrecte. "
+#~ "Voulez-vous choisir une autre bibliothèque ?"
+
+#~ msgid "Error loading library"
+#~ msgstr "Erreur lors du chargement de la bibliothèque"
+
+#~ msgid ""
+#~ "Are you sure to copy IBMTTS files to local NVDA installation and register "
+#~ "a new add-on called \"eciLibraries\" to store the libraries? It may not "
+#~ "work in some IBMTTS distributions.\n"
+#~ "\t\tNote: after it, if you want to uninstall this add-on, you'll need to "
+#~ "uninstall two add-ons in order to  delete IBMTTS files completelly from "
+#~ "NVDA. This one and \"eciLibraries\""
+#~ msgstr ""
+#~ "Êtes-vous sûr de vouloir copier les fichiers IBMTTS à l'installation "
+#~ "locale de NVDA et enregistrer une nouvelle extension appelée  "
+#~ "\"eciLibraries\" pour sauvegarder les fichiers du synthétiseur? Cela "
+#~ "pourrait ne pas fonctionner dans certaines distributions IBMTTS.\n"
+#~ "\t\tRemarque: après cela, si vous souhaitez désinstaller cette extension, "
+#~ "vous devez désinstaller deux extensions pour supprimer complètement les "
+#~ "fichiers  IBMTTS de NVDA. Celle-ci et \"eciLibraries\""
+
+#~ msgid "Copy IBMTTS files"
+#~ msgstr "Copie des fichiers IBMTTS en cours"
+
+#~ msgid ""
+#~ "Unable to copy the files because the source and destination paths are the "
+#~ "same."
+#~ msgstr ""
+#~ "Impossible de copier les fichiers car les chemins d'accès source et "
+#~ "destination sont identiques."
+
+#~ msgid "Copying files"
+#~ msgstr "Copie des fichiers en cours"
+
+#~ msgid "Please wait while IBMTTS files  are copied into add-on."
+#~ msgstr ""
+#~ "Veuillez patienter pendant que les fichiers IBMTTS sont copiés dans "
+#~ "l'extension."
+
+#~ msgid ""
+#~ "Successfully copied IBMTTS files. The local copy will be used after "
+#~ "restart NVDA."
+#~ msgstr ""
+#~ "Fichiers IBMTTS copiés avec succès. La copie locale sera utilisée après "
+#~ "le redémarrage de NVDA."
+
+#~ msgid "Error copying IBMTTS files"
+#~ msgstr "Erreur lors de la copie des fichiers IBMTTS"
+
+#~ msgid ""
+#~ "The synthesizer won't be available until you set   IBMTTS files. NVDA "
+#~ "won't show this synthesizer in teh synthesizers lists because you need to "
+#~ "set the IBMTTS files location first.\n"
+#~ "\tTo do it open the NVDA settings dialog, select IBMTTS category and use "
+#~ "the \"Browse for  IBMTTS library\" button to select the IBMTTS files "
+#~ "folder.\n"
+#~ msgstr ""
+#~ "Le synthétiseur ne sera disponible que lorsque vous définissez les "
+#~ "fichiers IBMTTS. NVDA ne montrera pas ce synthétiseur dans la liste de "
+#~ "synthétiseur car vous devez d'abord définir l'emplacement des fichiers du "
+#~ "synthétiseur.\n"
+#~ "\tPour ce faire ouvrir le dialogue Paramètres de NVDA,  sélectionner la "
+#~ "catégorie IBMTTS et utiliser le bouton \"Rechercher une bibliothèque "
+#~ "IBMTTS\" pour sélectionner le dossier des fichiers IBMTTS.\n"
+
+#~ msgid "IBMTTS driver for NVDA"
+#~ msgstr "Pilote IBMTTS pour NVDA"
+
+#~ msgid "IBMTTS driver"
+#~ msgstr "Pilote IBMTTS"
+
+#~ msgid "This is the IBMTTS synthesizer driver for NVDA."
+#~ msgstr "Ceci est le pilote du synthétiseur IBMTTS pour NVDA."

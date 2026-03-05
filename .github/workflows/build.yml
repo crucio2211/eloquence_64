@@ -2,6 +2,7 @@ name: Build Eloquence Add-on
 
 on:
   push:
+  pull_request:
   release:
     types: [published]
 

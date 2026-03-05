@@ -93,7 +93,13 @@ class AudioWorker(threading.Thread):
 						if self._player:
 							self._player.feed(data, onDone=wrapped_on_done)
 			except FileNotFoundError:
-				LOGGER.warning("Sound device not found during feed")
+				LOGGER.warning("Sound device not found during feed — scheduling audio reinitialization")
+				# Device disappeared (e.g. Bluetooth disconnected then reconnected).
+				# Reinitialize so output follows the currently configured device.
+				try:
+					self._client.reinitialize_audio()
+				except Exception:
+					LOGGER.exception("Auto-reinitialize after device loss failed")
 			except Exception:
 				LOGGER.exception("WavePlayer feed failed")
 			self._queue.task_done()
@@ -161,6 +167,7 @@ class EloquenceHostClient:
 		self._running = threading.Event()
 		self._command_lock = threading.Lock()
 		self._stop_lock = threading.RLock()
+		self._player_lock = threading.RLock()
 		self._sequence = 0
 		self._current_seq = 0
 		self._speaking = False
@@ -212,13 +219,48 @@ class EloquenceHostClient:
 	def initialize_audio(self) -> None:
 		if self._player:
 			return
+		self._create_player()
+
+	def reinitialize_audio(self) -> None:
+		"""Reinitialize the audio player with the currently configured output device.
+		Called when the NVDA audio output device changes.
+		"""
+		LOGGER.info("Eloquence: Reinitializing audio player for new output device")
+		# Grab and clear the old worker/player atomically under the lock
+		with self._player_lock:
+			old_worker = self._audio_worker
+			old_player = self._player
+			self._audio_worker = None
+			self._player = None
+		# Stop the old worker outside the lock
+		if old_worker:
+			old_worker.stop()
+			old_worker.join(timeout=1)
+		if old_player:
+			try:
+				old_player.close()
+			except Exception:
+				LOGGER.exception("WavePlayer close failed during reinitialize")
+		self._create_player()
+
+	def _create_player(self) -> None:
+		"""Create a WavePlayer and AudioWorker for the currently configured output device."""
 		if version_year >= 2025:
 			device = config.conf["audio"]["outputDevice"]
-			player = nvwave.WavePlayer(1, 11025, 16, outputDevice=device)
 		else:
 			device = config.conf["speech"]["outputDevice"]
-			nvwave.WavePlayer.MIN_BUFFER_MS = 1500
-			player = nvwave.WavePlayer(1, 11025, 16, outputDevice=device, buffered=True)
+		try:
+			if version_year >= 2025:
+				player = nvwave.WavePlayer(1, 11025, 16, outputDevice=device)
+			else:
+				nvwave.WavePlayer.MIN_BUFFER_MS = 1500
+				player = nvwave.WavePlayer(1, 11025, 16, outputDevice=device, buffered=True)
+		except Exception:
+			LOGGER.exception("WavePlayer creation failed for outputDevice=%r, falling back to default", device)
+			if version_year >= 2025:
+				player = nvwave.WavePlayer(1, 11025, 16, outputDevice="")
+			else:
+				player = nvwave.WavePlayer(1, 11025, 16, outputDevice="", buffered=True)
 		self._player = player
 		self._audio_worker = AudioWorker(player, self._audio_queue, self)
 		self._audio_worker.start()
@@ -278,10 +320,12 @@ class EloquenceHostClient:
 		if not self._host:
 			return
 		self._sequence += 1
-		# Stop local audio player immediately
-		if self._player:
+		# Stop local audio player immediately, using lock to prevent race with AudioWorker
+		with self._player_lock:
+			player = self._player
+		if player:
 			try:
-				self._player.stop()
+				player.stop()
 			except Exception:
 				LOGGER.exception("WavePlayer stop failed")
 		# Tell the host to stop without blocking
@@ -342,8 +386,12 @@ class EloquenceHostClient:
 			self._audio_worker.join(timeout=1)
 			self._audio_worker = None
 		if self._player:
-			self._player.close()
-			self._player = None
+			try:
+				self._player.close()
+			except Exception:
+				LOGGER.exception("WavePlayer close failed during shutdown")
+			finally:
+				self._player = None
 		# Send delete command to host (this will cause receiver to get EOFError)
 		try:
 			self.send_command("delete")
@@ -461,21 +509,22 @@ def speak(text):
 		# Use appropriate encoding for Asian languages
 		encoding = LANG_ENCODINGS.get(_current_lang, "mbcs")
 		text_bytes = text.encode(encoding, errors="replace")
-		_client.send_command("addText", text=text_bytes, wait=False)
+		# Fire-and-forget — no need to wait for ack on addText
+		_client.send_command("addText", wait=False, text=text_bytes)
 	except Exception:
 		LOGGER.exception("Failed to send text to synthesizer")
 
 
 def index(idx):
 	try:
-		_client.send_command("insertIndex", value=int(idx), wait=False)
+		# Fire-and-forget — no need to wait for ack on insertIndex
+		_client.send_command("insertIndex", wait=False, value=int(idx))
 	except Exception:
 		LOGGER.exception("Failed to insert index")
 
 
 def cmdProsody(pr, multiplier, offset=0):
-	"""
-	Apply a prosody change using the current base value from voice_params.
+	"""Apply a prosody change using the current base value from voice_params.
 
 	Called at synthesis time so voice_params[pr] reflects the latest base.
 	Computes: value = base * multiplier + offset
@@ -504,6 +553,13 @@ def stop():
 def pause(switch):
 	if _client._player:
 		_client._player.pause(switch)
+
+
+def reinitialize_audio():
+	"""Reinitialize audio to use the currently configured output device.
+	Call this when NVDA's audio output device changes.
+	"""
+	_client.reinitialize_audio()
 
 
 def terminate():
@@ -552,10 +608,15 @@ def getVParam(pr):
 
 def setVParam(pr, vl, temporary=False):
 	try:
-		response = _client.send_command(
-			"setVoiceParam", paramId=int(pr), value=int(vl), temporary=bool(temporary),
-			wait=False)
-		if not temporary:
+		if temporary:
+			# Fire-and-forget for temporary prosody changes (caps pitch etc.)
+			_client.send_command(
+				"setVoiceParam", wait=False, paramId=int(pr), value=int(vl), temporary=True
+			)
+		else:
+			response = _client.send_command(
+				"setVoiceParam", paramId=int(pr), value=int(vl), temporary=False
+			)
 			voice_params[pr] = response.get("voiceParams", {}).get(pr, vl)
 	except Exception:
 		LOGGER.exception("Failed to set voice parameter")

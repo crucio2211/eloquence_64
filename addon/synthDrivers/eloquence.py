@@ -122,6 +122,728 @@ variants = {
 }
 
 
+class _VirtualList(wx.ListCtrl):
+	"""wx.ListCtrl subclass that supports virtual mode via OnGetItemText override."""
+	def __init__(self, parent, **kwargs):
+		super().__init__(parent, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_VIRTUAL | wx.BORDER_SUNKEN, **kwargs)
+		self._data_source = None  # callable(row, col) -> str
+
+	def set_data_source(self, fn):
+		self._data_source = fn
+
+	def OnGetItemText(self, item, col):
+		if self._data_source:
+			return self._data_source(item, col)
+		return ""
+
+
+class DictionaryEditorDialog(wx.Dialog):
+	"""Dialog for editing Eloquence pronunciation dictionary files.
+	Uses a virtual ListCtrl so 65k+ entries never hang the UI.
+	"""
+
+	def __init__(self, parent):
+		super().__init__(
+			parent,
+			title=_("Eloquence Pronunciation Dictionary Editor"),
+			style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+		)
+		self._dic_dir = os.path.join(os.path.dirname(__file__), "eloquence")
+		self._entries = []        # full list of [word, phonetic]
+		self._filtered = []       # current view (after search)
+		self._current_file = None
+		self._modified = False
+		self._build_ui()
+		self._populate_file_choice()
+
+	# ------------------------------------------------------------------
+	def _build_ui(self):
+		main_sizer = wx.BoxSizer(wx.VERTICAL)
+		inner = wx.BoxSizer(wx.VERTICAL)
+
+		# File selector
+		fs = wx.BoxSizer(wx.HORIZONTAL)
+		fs.Add(wx.StaticText(self, label=_("Dictionary file:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+		self._file_choice = wx.Choice(self, choices=[])
+		self._file_choice.Bind(wx.EVT_CHOICE, self._on_file_change)
+		fs.Add(self._file_choice, 1, wx.EXPAND)
+		inner.Add(fs, 0, wx.EXPAND | wx.BOTTOM, 8)
+
+		# Search
+		ss = wx.BoxSizer(wx.HORIZONTAL)
+		ss.Add(wx.StaticText(self, label=_("Search:")), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+		self._search_ctrl = wx.SearchCtrl(self, style=wx.TE_PROCESS_ENTER)
+		self._search_ctrl.ShowCancelButton(True)
+		self._search_ctrl.Bind(wx.EVT_TEXT, self._on_search)
+		self._search_ctrl.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN, self._on_search_cancel)
+		ss.Add(self._search_ctrl, 1, wx.EXPAND)
+		inner.Add(ss, 0, wx.EXPAND | wx.BOTTOM, 8)
+
+		# Virtual ListCtrl — only renders visible rows, no lag with 65k entries
+		self._list = _VirtualList(self)
+		self._list.InsertColumn(0, _("Word"), width=200)
+		self._list.InsertColumn(1, _("Pronunciation"), width=340)
+		self._list.set_data_source(self.OnGetItemText)
+		self._list.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._on_edit)
+		self._list.Bind(wx.EVT_LIST_ITEM_SELECTED, self._on_sel_changed)
+		self._list.Bind(wx.EVT_LIST_ITEM_DESELECTED, self._on_sel_changed)
+		inner.Add(self._list, 1, wx.EXPAND | wx.BOTTOM, 6)
+
+		# Entry count
+		self._count_label = wx.StaticText(self, label="")
+		inner.Add(self._count_label, 0, wx.BOTTOM, 4)
+
+		# Action buttons
+		bs = wx.BoxSizer(wx.HORIZONTAL)
+		self._add_btn    = wx.Button(self, label=_("&Add"))
+		self._var_btn    = wx.Button(self, label=_("Add &Variations..."))
+		self._edit_btn   = wx.Button(self, label=_("&Edit"))
+		self._remove_btn = wx.Button(self, label=_("&Remove"))
+		self._import_btn = wx.Button(self, label=_("&Import..."))
+		self._export_btn = wx.Button(self, label=_("E&xport..."))
+		self._save_btn   = wx.Button(self, label=_("&Save"))
+
+		self._edit_btn.Disable()
+		self._var_btn.Disable()
+		self._remove_btn.Disable()
+
+		self._add_btn.Bind(wx.EVT_BUTTON, self._on_add)
+		self._var_btn.Bind(wx.EVT_BUTTON, self._on_variations)
+		self._edit_btn.Bind(wx.EVT_BUTTON, self._on_edit)
+		self._remove_btn.Bind(wx.EVT_BUTTON, self._on_remove)
+		self._import_btn.Bind(wx.EVT_BUTTON, self._on_import)
+		self._export_btn.Bind(wx.EVT_BUTTON, self._on_export)
+		self._save_btn.Bind(wx.EVT_BUTTON, self._on_save)
+
+		for btn in (self._add_btn, self._var_btn, self._edit_btn,
+					self._remove_btn, self._import_btn, self._export_btn, self._save_btn):
+			bs.Add(btn, 0, wx.RIGHT, 4)
+		inner.Add(bs, 0, wx.BOTTOM, 8)
+
+		main_sizer.Add(inner, 1, wx.EXPAND | wx.ALL, 10)
+		close_btn = wx.Button(self, wx.ID_CLOSE, label=_("Close"))
+		close_btn.Bind(wx.EVT_BUTTON, self._on_close)
+		main_sizer.Add(close_btn, 0, wx.ALIGN_RIGHT | wx.RIGHT | wx.BOTTOM, 10)
+
+		self.SetSizer(main_sizer)
+		self.SetSize((660, 520))
+		self.Centre()
+
+	def OnGetItemText(self, item, col):
+		if item < 0 or item >= len(self._filtered):
+			return ""
+		return self._filtered[item][col]
+
+	# ------------------------------------------------------------------
+	def _populate_file_choice(self):
+		choices, self._dic_paths = [], []
+		try:
+			for fname in sorted(os.listdir(self._dic_dir)):
+				if fname.lower().endswith(".dic"):
+					choices.append(fname)
+					self._dic_paths.append(os.path.join(self._dic_dir, fname))
+		except Exception as e:
+			log.error(f"Failed to list dic files: {e}")
+		self._file_choice.SetItems(choices)
+		if choices:
+			self._file_choice.SetSelection(0)
+			self._load_file(self._dic_paths[0])
+
+	def _load_file(self, path):
+		try:
+			self._current_file = path
+			self._entries = []
+			with open(path, "r", encoding="iso-8859-1", errors="replace") as f:
+				for line in f:
+					line = line.rstrip("\r\n")
+					if line and "\t" in line:
+						parts = line.split("\t", 1)
+						if len(parts) == 2:
+							self._entries.append([parts[0], parts[1]])
+			self._modified = False
+			self._apply_filter()
+		except Exception as e:
+			log.error(f"Failed to load {path}: {e}")
+			wx.MessageBox(_("Failed to load file: {e}").format(e=str(e)), _("Error"), wx.OK | wx.ICON_ERROR)
+
+	def _apply_filter(self, search=""):
+		"""Rebuild _filtered and update virtual list item count."""
+		q = search.lower().strip()
+		if q:
+			self._filtered = [e for e in self._entries if q in e[0].lower() or q in e[1].lower()]
+		else:
+			self._filtered = list(self._entries)
+		self._list.SetItemCount(len(self._filtered))
+		self._list.Refresh()
+		total = len(self._entries)
+		shown = len(self._filtered)
+		if q:
+			self._count_label.SetLabel(_("{shown} of {total} entries").format(shown=shown, total=total))
+		else:
+			self._count_label.SetLabel(_("{total} entries").format(total=total))
+		self._on_sel_changed()
+
+	def _get_selected_filtered_idx(self):
+		return self._list.GetFirstSelected()
+
+	def _get_entry_idx_from_filtered(self, filtered_idx):
+		"""Map a filtered row index back to the master _entries index."""
+		if filtered_idx < 0 or filtered_idx >= len(self._filtered):
+			return -1
+		entry = self._filtered[filtered_idx]
+		try:
+			return self._entries.index(entry)
+		except ValueError:
+			return -1
+
+	# ------------------------------------------------------------------
+	def _on_file_change(self, evt):
+		if self._modified and not self._confirm_unsaved():
+			return
+		sel = self._file_choice.GetSelection()
+		if 0 <= sel < len(self._dic_paths):
+			self._load_file(self._dic_paths[sel])
+
+	def _on_search(self, evt):
+		self._apply_filter(self._search_ctrl.GetValue())
+
+	def _on_search_cancel(self, evt):
+		self._search_ctrl.SetValue("")
+		self._apply_filter()
+
+	def _on_sel_changed(self, evt=None):
+		has = self._list.GetFirstSelected() != -1
+		self._edit_btn.Enable(has)
+		self._var_btn.Enable(has)
+		self._remove_btn.Enable(has)
+
+	# ------------------------------------------------------------------
+	def _on_add(self, evt):
+		dlg = DictionaryEntryDialog(self, _("Add Entry"))
+		if dlg.ShowModal() == wx.ID_OK:
+			word, phonetic = dlg.get_values()
+			if word:
+				self._entries.append([word, phonetic])
+				self._modified = True
+				self._apply_filter(self._search_ctrl.GetValue())
+		dlg.Destroy()
+
+	def _on_edit(self, evt=None):
+		fi = self._get_selected_filtered_idx()
+		if fi == -1:
+			return
+		ei = self._get_entry_idx_from_filtered(fi)
+		if ei == -1:
+			return
+		word, phonetic = self._entries[ei]
+		dlg = DictionaryEntryDialog(self, _("Edit Entry"), word, phonetic)
+		if dlg.ShowModal() == wx.ID_OK:
+			nw, np = dlg.get_values()
+			if nw:
+				self._entries[ei] = [nw, np]
+				self._modified = True
+				self._apply_filter(self._search_ctrl.GetValue())
+		dlg.Destroy()
+
+	def _on_remove(self, evt):
+		fi = self._get_selected_filtered_idx()
+		if fi == -1:
+			return
+		ei = self._get_entry_idx_from_filtered(fi)
+		if ei == -1:
+			return
+		word = self._entries[ei][0]
+		dlg = wx.MessageDialog(
+			self,
+			_("Remove entry for '{word}'?").format(word=word),
+			_("Confirm Remove"),
+			wx.YES_NO | wx.ICON_QUESTION,
+		)
+		if dlg.ShowModal() == wx.ID_YES:
+			del self._entries[ei]
+			self._modified = True
+			self._apply_filter(self._search_ctrl.GetValue())
+		dlg.Destroy()
+
+	def _on_variations(self, evt):
+		fi = self._get_selected_filtered_idx()
+		if fi == -1:
+			return
+		ei = self._get_entry_idx_from_filtered(fi)
+		if ei == -1:
+			return
+		word, phonetic = self._entries[ei]
+		existing_words = {e[0].lower() for e in self._entries}
+		dlg = VariationGeneratorDialog(self, word, phonetic, existing_words)
+		if dlg.ShowModal() == wx.ID_OK:
+			new_entries = dlg.get_entries()
+			if new_entries:
+				self._entries.extend(new_entries)
+				self._modified = True
+				self._apply_filter(self._search_ctrl.GetValue())
+				wx.MessageBox(
+					_("Added {n} variation(s).").format(n=len(new_entries)),
+					_("Done"),
+					wx.OK | wx.ICON_INFORMATION,
+				)
+		dlg.Destroy()
+
+	def _on_import(self, evt):
+		# Step 1: Pick the source file to import from
+		src_dlg = wx.FileDialog(
+			self, _("Import Dictionary File"),
+			wildcard=_("Dictionary files (*.dic)|*.dic|Text files (*.txt)|*.txt|All files (*.*)|*.*"),
+			style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+		)
+		if src_dlg.ShowModal() != wx.ID_OK:
+			src_dlg.Destroy()
+			return
+		src_path = src_dlg.GetPath()
+		src_dlg.Destroy()
+
+		# Read source entries first
+		try:
+			imported = []
+			with open(src_path, "r", encoding="iso-8859-1", errors="replace") as f:
+				for line in f:
+					line = line.rstrip("\r\n")
+					if line and "\t" in line:
+						parts = line.split("\t", 1)
+						if len(parts) == 2:
+							imported.append([parts[0], parts[1]])
+		except Exception as e:
+			wx.MessageBox(_("Failed to read file: {e}").format(e=str(e)), _("Error"), wx.OK | wx.ICON_ERROR)
+			return
+
+		if not imported:
+			wx.MessageBox(_("No valid entries found in the selected file."), _("Import"), wx.OK | wx.ICON_INFORMATION)
+			return
+
+		# Step 2: Ask where to put the imported entries
+		existing_files = [os.path.basename(p) for p in self._dic_paths]
+		choices = existing_files + [_("Create new .dic file...")]
+		dest_dlg = wx.SingleChoiceDialog(
+			self,
+			_("Found {n} entries. Where do you want to import them?").format(n=len(imported)),
+			_("Import Destination"),
+			choices,
+		)
+		# Pre-select current file
+		if self._current_file:
+			cur_name = os.path.basename(self._current_file)
+			if cur_name in existing_files:
+				dest_dlg.SetSelection(existing_files.index(cur_name))
+		if dest_dlg.ShowModal() != wx.ID_OK:
+			dest_dlg.Destroy()
+			return
+		sel = dest_dlg.GetSelection()
+		dest_dlg.Destroy()
+
+		# Step 3: Determine destination path
+		if sel == len(existing_files):
+			# Create new file
+			new_dlg = wx.FileDialog(
+				self, _("Create New Dictionary File"),
+				defaultDir=self._dic_dir,
+				wildcard=_("Dictionary files (*.dic)|*.dic"),
+				style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+			)
+			if new_dlg.ShowModal() != wx.ID_OK:
+				new_dlg.Destroy()
+				return
+			dest_path = new_dlg.GetPath()
+			if not dest_path.lower().endswith(".dic"):
+				dest_path += ".dic"
+			new_dlg.Destroy()
+			dest_entries = []
+			dest_existing = set()
+		else:
+			dest_path = self._dic_paths[sel]
+			# Load destination if it's not the current file
+			if dest_path == self._current_file:
+				dest_entries = self._entries
+				dest_existing = {e[0].lower() for e in self._entries}
+			else:
+				dest_entries = []
+				dest_existing = set()
+				try:
+					with open(dest_path, "r", encoding="iso-8859-1", errors="replace") as f:
+						for line in f:
+							line = line.rstrip("\r\n")
+							if line and "\t" in line:
+								parts = line.split("\t", 1)
+								if len(parts) == 2:
+									dest_entries.append([parts[0], parts[1]])
+									dest_existing.add(parts[0].lower())
+				except Exception as e:
+					wx.MessageBox(_("Failed to read destination: {e}").format(e=str(e)), _("Error"), wx.OK | wx.ICON_ERROR)
+					return
+
+		# Step 4: Merge and save
+		added = 0
+		for entry in imported:
+			if entry[0].lower() not in dest_existing:
+				dest_entries.append(entry)
+				dest_existing.add(entry[0].lower())
+				added += 1
+
+		try:
+			with open(dest_path, "w", encoding="iso-8859-1", errors="replace", newline="\r\n") as f:
+				for word, phonetic in dest_entries:
+					f.write(f"{word}\t{phonetic}\n")
+		except Exception as e:
+			wx.MessageBox(_("Failed to save: {e}").format(e=str(e)), _("Error"), wx.OK | wx.ICON_ERROR)
+			return
+
+		# If we wrote to the current file, refresh the view
+		if dest_path == self._current_file:
+			self._entries = dest_entries
+			self._modified = False
+			self._apply_filter(self._search_ctrl.GetValue())
+		elif dest_path not in self._dic_paths:
+			# New file — add to dropdown and switch to it
+			self._dic_paths.append(dest_path)
+			self._file_choice.Append(os.path.basename(dest_path))
+
+		wx.MessageBox(
+			_("Imported {n} new entries into {f}. Press OK to apply changes.").format(n=added, f=os.path.basename(dest_path)),
+			_("Import Complete"), wx.OK | wx.ICON_INFORMATION,
+		)
+		# User already pressed OK — reinit now, speech is idle
+		try:
+			synthDriverHandler.setSynth(synthDriverHandler.getSynth().name)
+		except Exception as e:
+			log.error(f"Failed to reload synth after import: {e}", exc_info=True)
+
+
+	def _on_export(self, evt):
+		dlg = wx.FileDialog(
+			self, _("Export Dictionary File"),
+			wildcard=_("Dictionary files (*.dic)|*.dic|Text files (*.txt)|*.txt"),
+			style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+		)
+		if dlg.ShowModal() == wx.ID_OK:
+			path = dlg.GetPath()
+			try:
+				with open(path, "w", encoding="iso-8859-1", errors="replace", newline="\r\n") as f:
+					for word, phonetic in self._entries:
+						f.write(f"{word}\t{phonetic}\n")
+				wx.MessageBox(_("Exported {n} entries.").format(n=len(self._entries)), _("Export Complete"), wx.OK | wx.ICON_INFORMATION)
+			except Exception as e:
+				wx.MessageBox(_("Export failed: {e}").format(e=str(e)), _("Error"), wx.OK | wx.ICON_ERROR)
+		dlg.Destroy()
+
+	def _save_current(self):
+		if not self._current_file:
+			return
+		try:
+			with open(self._current_file, "w", encoding="iso-8859-1", errors="replace", newline="\r\n") as f:
+				for word, phonetic in self._entries:
+					f.write(f"{word}\t{phonetic}\n")
+			self._modified = False
+			wx.MessageBox(_("Dictionary saved. Press OK to apply changes."), _("Saved"), wx.OK | wx.ICON_INFORMATION)
+			# User already pressed OK — reinit now, speech is idle
+			try:
+				synthDriverHandler.setSynth(synthDriverHandler.getSynth().name)
+			except Exception as e:
+				log.error(f"Failed to reload synth after dictionary save: {e}", exc_info=True)
+		except Exception as e:
+			wx.MessageBox(_("Failed to save: {e}").format(e=str(e)), _("Error"), wx.OK | wx.ICON_ERROR)
+
+	def _on_save(self, evt):
+		self._save_current()
+
+	def _confirm_unsaved(self):
+		"""Ask user what to do with unsaved changes. Returns True to proceed, False to cancel."""
+		dlg = wx.MessageDialog(
+			self,
+			_("You have unsaved changes. Save before continuing?"),
+			_("Unsaved Changes"),
+			wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION,
+		)
+		result = dlg.ShowModal()
+		dlg.Destroy()
+		if result == wx.ID_YES:
+			self._save_current()
+			return True
+		elif result == wx.ID_NO:
+			return True
+		return False  # Cancel
+
+	def _on_close(self, evt):
+		if self._modified and not self._confirm_unsaved():
+			return
+		self.EndModal(wx.ID_OK)
+
+
+class VariationGeneratorDialog(wx.Dialog):
+	"""Generate word variations from a root word + phoneme.
+	Uses a two-column ListCtrl: Word | Phoneme.
+	Space bar or click toggles the checkbox (state image).
+	Double-click or Edit button opens phoneme editor.
+	"""
+
+	PREFIXES = [
+		("i-",    "I"),
+		("in-",   "In"),
+		("nag-",  "nAg"),
+		("mag-",  "mAg"),
+		("nang-", "nAG"),
+		("mang-", "mAG"),
+		("pag-",  "pAg"),
+		("na-",   "nA"),
+		("ma-",   "mA"),
+		("ka-",   "kA"),
+		("sang-", "sAG"),
+	]
+	SUFFIXES = [
+		("-an",   "An"),
+		("-in",   "In"),
+		("-ng",   "G"),
+		("-han",  "hAn"),
+		("-hin",  "hIn"),
+	]
+	INFIXES = [
+		("um",    "um"),
+		("in",    "in"),
+	]
+
+	def __init__(self, parent, root_word, root_phoneme, existing_words):
+		super().__init__(
+			parent,
+			title=_("Generate Variations for: {word}").format(word=root_word),
+			style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+		)
+		self._root_word = root_word
+		self._root_phoneme = root_phoneme
+		self._existing = existing_words
+		self._variations = []  # [word, phoneme, checked]
+		self._build_ui()
+		self._generate_suggestions()
+
+	def _build_ui(self):
+		sizer = wx.BoxSizer(wx.VERTICAL)
+
+		info = wx.StaticText(
+			self,
+			label=_("Root: {word}   Phoneme: {ph}\n"
+					"Space/click = toggle. Double-click or Edit = change phoneme.").format(
+				word=self._root_word, ph=self._root_phoneme
+			)
+		)
+		sizer.Add(info, 0, wx.ALL, 10)
+
+		# ListCtrl with native checkbox support via EnableCheckBoxes()
+		self._list = wx.ListCtrl(self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.BORDER_SUNKEN)
+		self._list.EnableCheckBoxes(True)
+		self._list.InsertColumn(0, _("Word"), width=200)
+		self._list.InsertColumn(1, _("Phoneme"), width=300)
+		self._list.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._on_dbl_click)
+		self._list.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
+		sizer.Add(self._list, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
+
+		# Buttons row
+		btn_row = wx.BoxSizer(wx.HORIZONTAL)
+		edit_btn = wx.Button(self, label=_("&Edit Phoneme"))
+		all_btn  = wx.Button(self, label=_("Select &All"))
+		none_btn = wx.Button(self, label=_("Select &None"))
+		edit_btn.Bind(wx.EVT_BUTTON, self._on_edit)
+		all_btn.Bind(wx.EVT_BUTTON,  lambda e: self._set_all(True))
+		none_btn.Bind(wx.EVT_BUTTON, lambda e: self._set_all(False))
+		for b in (edit_btn, all_btn, none_btn):
+			btn_row.Add(b, 0, wx.RIGHT, 6)
+		sizer.Add(btn_row, 0, wx.LEFT | wx.TOP | wx.BOTTOM, 10)
+
+		# Add custom variation button — opens a separate dialog
+		add_custom_btn = wx.Button(self, label=_("+ Add Custom Variation..."))
+		add_custom_btn.Bind(wx.EVT_BUTTON, self._on_add_custom)
+		sizer.Add(add_custom_btn, 0, wx.LEFT | wx.BOTTOM, 10)
+
+		# OK / Cancel
+		std = wx.StdDialogButtonSizer()
+		ok_btn = wx.Button(self, wx.ID_OK, label=_("Add Checked"))
+		ok_btn.SetDefault()
+		std.AddButton(ok_btn)
+		std.AddButton(wx.Button(self, wx.ID_CANCEL))
+		std.Realize()
+		sizer.Add(std, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+
+		self.SetSizer(sizer)
+		self.SetSize((580, 520))
+		self.Centre()
+
+	# ------------------------------------------------------------------
+	@staticmethod
+	def _strip_phoneme(ph):
+		"""Remove surrounding `[ and ] from phoneme string, return inner content."""
+		ph = ph.strip()
+		if ph.startswith("`[") and ph.endswith("]"):
+			return ph[2:-1]
+		return ph
+
+	@staticmethod
+	def _strip_phoneme(ph):
+		ph = ph.strip()
+		if ph.startswith("`[") and ph.endswith("]"):
+			return ph[2:-1]
+		return ph
+
+	@staticmethod
+	def _wrap_phoneme(inner):
+		return f"`[{inner}]"
+
+	def _combine(self, prefix_inner, root_ph, suffix_inner=""):
+		root_inner = self._strip_phoneme(root_ph)
+		return self._wrap_phoneme(prefix_inner + root_inner + suffix_inner)
+
+	def _generate_suggestions(self):
+		word, phoneme = self._root_word, self._root_phoneme
+		for label, ph in self.PREFIXES:
+			nw = label.replace("-", "") + word
+			if nw.lower() not in self._existing:
+				self._variations.append([nw, self._combine(ph, phoneme), False])
+		for label, ph in self.SUFFIXES:
+			nw = word + label.replace("-", "")
+			if nw.lower() not in self._existing:
+				self._variations.append([nw, self._combine("", phoneme, ph), False])
+		for ph_infix in self.INFIXES:
+			nw = word[0] + ph_infix[0] + word[1:]
+			if nw.lower() not in self._existing:
+				self._variations.append([nw, self._combine(ph_infix[1], phoneme), False])
+		self._rebuild()
+
+	def _rebuild(self):
+		self._list.DeleteAllItems()
+		for i, (word, phoneme, checked) in enumerate(self._variations):
+			idx = self._list.InsertItem(i, word)
+			self._list.SetItem(idx, 1, phoneme)
+			self._list.CheckItem(idx, checked)
+
+	def _toggle(self, idx):
+		if idx < 0 or idx >= len(self._variations):
+			return
+		new_state = not self._list.IsItemChecked(idx)
+		self._variations[idx][2] = new_state
+		self._list.CheckItem(idx, new_state)
+
+	def _on_key_down(self, evt):
+		if evt.GetKeyCode() == wx.WXK_SPACE:
+			idx = self._list.GetFirstSelected()
+			if idx != wx.NOT_FOUND:
+				self._toggle(idx)
+		else:
+			evt.Skip()
+
+	def _on_dbl_click(self, evt):
+		self._open_editor(evt.GetIndex())
+
+	def _on_edit(self, evt):
+		idx = self._list.GetFirstSelected()
+		if idx == wx.NOT_FOUND:
+			wx.MessageBox(_("Select a variation first."), _("Edit Phoneme"), wx.OK | wx.ICON_INFORMATION)
+			return
+		self._open_editor(idx)
+
+	def _open_editor(self, idx):
+		if idx < 0 or idx >= len(self._variations):
+			return
+		word, phoneme, checked = self._variations[idx]
+		dlg = DictionaryEntryDialog(self, _("Edit Variation"), word, phoneme)
+		if dlg.ShowModal() == wx.ID_OK:
+			nw, np = dlg.get_values()
+			if nw:
+				self._variations[idx] = [nw, np, checked]
+				self._list.SetItem(idx, 0, nw)
+				self._list.SetItem(idx, 1, np)
+		dlg.Destroy()
+
+	def _on_add_custom(self, evt):
+		dlg = DictionaryEntryDialog(
+			self,
+			_("Add Custom Variation"),
+			phonetic=self._root_phoneme,
+		)
+		while dlg.ShowModal() == wx.ID_OK:
+			word, phoneme = dlg.get_values()
+			if not word:
+				wx.MessageBox(_("Please enter a word."), _("Error"), wx.OK | wx.ICON_WARNING)
+				continue
+			self._variations.append([word, phoneme, True])
+			idx = self._list.InsertItem(len(self._variations) - 1, word)
+			self._list.SetItem(idx, 1, phoneme)
+			self._list.CheckItem(idx, True)
+			# Reset for next entry
+			dlg._word_ctrl.SetValue("")
+			dlg._phonetic_ctrl.SetValue(self._root_phoneme)
+			dlg._word_ctrl.SetFocus()
+			# Ask if user wants to add another
+			more = wx.MessageDialog(
+				self,
+				_("Variation '{word}' added. Add another?").format(word=word),
+				_("Added"),
+				wx.YES_NO | wx.ICON_QUESTION,
+			)
+			if more.ShowModal() != wx.ID_YES:
+				more.Destroy()
+				break
+			more.Destroy()
+		dlg.Destroy()
+
+	def _set_all(self, state):
+		for i in range(len(self._variations)):
+			self._variations[i][2] = state
+			self._list.CheckItem(i, state)
+
+	def get_entries(self):
+		return [[w, ph] for i, (w, ph, _) in enumerate(self._variations)
+				if self._list.IsItemChecked(i)]
+
+
+class DictionaryEntryDialog(wx.Dialog):
+	"""Small dialog for adding or editing a single dictionary entry."""
+
+	def __init__(self, parent, title, word="", phonetic=""):
+		super().__init__(parent, title=title, style=wx.DEFAULT_DIALOG_STYLE)
+		sizer = wx.BoxSizer(wx.VERTICAL)
+
+		word_sizer = wx.BoxSizer(wx.HORIZONTAL)
+		word_label = wx.StaticText(self, label=_("Word:"))
+		self._word_ctrl = wx.TextCtrl(self, value=word)
+		word_sizer.Add(word_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+		word_sizer.Add(self._word_ctrl, 1, wx.EXPAND)
+		sizer.Add(word_sizer, 0, wx.EXPAND | wx.ALL, 10)
+
+		phonetic_sizer = wx.BoxSizer(wx.HORIZONTAL)
+		phonetic_label = wx.StaticText(self, label=_("Pronunciation:"))
+		self._phonetic_ctrl = wx.TextCtrl(self, value=phonetic)
+		phonetic_sizer.Add(phonetic_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+		phonetic_sizer.Add(self._phonetic_ctrl, 1, wx.EXPAND)
+		sizer.Add(phonetic_sizer, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+
+		hint = wx.StaticText(self, label=_(
+			"Phoneme format: `[.1hE.0lo]   or   Spelled-out: heh loe"
+		))
+		hint.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+		sizer.Add(hint, 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
+
+		btn_sizer = wx.StdDialogButtonSizer()
+		ok_btn = wx.Button(self, wx.ID_OK)
+		ok_btn.SetDefault()
+		cancel_btn = wx.Button(self, wx.ID_CANCEL)
+		btn_sizer.AddButton(ok_btn)
+		btn_sizer.AddButton(cancel_btn)
+		btn_sizer.Realize()
+		sizer.Add(btn_sizer, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+
+		self.SetSizer(sizer)
+		self.Fit()
+		self.Centre()
+		self._word_ctrl.SetFocus()
+
+	def get_values(self):
+		return self._word_ctrl.GetValue().strip(), self._phonetic_ctrl.GetValue().strip()
+
+
 class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 	# Translators: Name of the category for this add-on in the settings dialog
 	title = _("Eloquence")
@@ -168,9 +890,29 @@ class EloquenceSettingsPanel(gui.settingsDialogs.SettingsPanel):
 			# Add-on updates are not allowed in secure mode.
 			if globalVars.appArgs.secure:
 				self.addonUpdateButton.Disable()
+
+			# Dictionary editor button
+			self.dictEditorButton = sHelper.addItem(wx.Button(self, label=_("Edit Pronunciation Dictionary...")))
+			self.Bind(wx.EVT_BUTTON, self.onEditDictionary, self.dictEditorButton)
+			if globalVars.appArgs.secure:
+				self.dictEditorButton.Disable()
 		except Exception as e:
 			log.error(f"Error creating Eloquence settings panel: {e}")
 			# Panel creation failed, but don't crash - synth will still work
+
+	def onEditDictionary(self, evt):
+		"""Open the pronunciation dictionary editor dialog."""
+		try:
+			dlg = DictionaryEditorDialog(self)
+			dlg.ShowModal()
+			dlg.Destroy()
+		except Exception as e:
+			log.error(f"Error opening dictionary editor: {e}", exc_info=True)
+			wx.MessageBox(
+				_("Failed to open dictionary editor: {e}").format(e=str(e)),
+				_("Error"),
+				wx.OK | wx.ICON_ERROR,
+			)
 
 	def onCopyHelper(self, evt):
 		"""Copies eloquence_host32.exe with UAC elevation support and definitive feedback."""
@@ -795,6 +1537,14 @@ class SynthDriver(synthDriverHandler.SynthDriver):
 			raise
 
 	def terminate(self):
+		# Shut down the eloquence backend so the WavePlayer is properly closed.
+		# This ensures the next initialize_audio() creates a fresh player for
+		# the currently configured audio device.
+		try:
+			_eloquence.terminate()
+		except Exception as e:
+			log.error(f"Eloquence: error terminating backend: {e}", exc_info=True)
+
 		# Safe settings panel removal - won't crash if it was never registered
 		try:
 			if hasattr(gui.settingsDialogs, "NVDASettingsDialog"):

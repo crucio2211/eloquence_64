@@ -1,59 +1,74 @@
-# eloquence_threshold
-Eloquence synthesizer NVDA add-on compatible with 64-bit NVDA. Supports Python 3 and new NVDA speech framework.
+# Eloquence for NVDA (Forked)
 
-## 64-bit support
+This is a fork of [fastfinge/eloquence_64](https://github.com/fastfinge/eloquence_64), the Eloquence synthesizer addon for NVDA with 64-bit support.
 
-As NVDA migrates to a 64-bit runtime, the Eloquence synthesizer DLL must be
-loaded from a 32-bit process.  This add-on now launches a dedicated helper
-process that hosts the original 32-bit DLL and streams synthesized audio back
-to NVDA using a lightweight RPC channel.  The integration is transparent to the
-user—no additional Python installation or manual steps are required.
+This fork adds several improvements on top of the original, focused on making pronunciation dictionaries easier to manage and making the synthesizer more responsive.
 
-For development scenarios where the prebuilt helper executable is unavailable
-the `ELOQUENCE_HOST_COMMAND` environment variable can be set to the command that
-launches a compatible 32-bit Python interpreter with `host_eloquence32.py`.
+---
 
-## Getting Eloquence to Work on Secure, Log-on, and Start-up Screens
+## What is new in this fork
 
-With NVDA 64-bit, you may notice that Eloquence is not available when NVDA enters log-on, start-up, or other secure screens.
+### Pronunciation Dictionary Editor
 
-When NVDA copies add-ons for use on secure screens, it does **not** copy any `*.exe` files for security reasons. For Eloquence, the specific file that is **not** copied when selecting **"Use currently saved settings during sign-in and on secure screens"** from the General pane of NVDA's Settings dialog is:
+A built-in dictionary editor is now accessible directly from NVDA Settings under the Eloquence category. Click the **Edit Pronunciation Dictionary** button to open it.
 
-```
-eloquence_host32.exe
-```
+**Features:**
 
-By default, this file is located at:
+- **File selector** — lists all .dic files found in the eloquence folder so you can switch between them without leaving the editor
+- **Real-time search** — filters entries as you type with no lag, even with 65,000 or more entries, using a virtual list that only renders visible rows
+- **Add, Edit, and Remove entries** — manage words and their pronunciations directly
+- **Import** — import entries from another dictionary file, with a destination chooser so you can send entries to any existing .dic file or create a new one, regardless of which file is currently open
+- **Export** — export the current dictionary to a file
+- **Auto-reload on save** — after saving or importing, a confirmation dialog appears. Once you dismiss it, the synthesizer reloads automatically so changes take effect immediately without restarting NVDA
+- **Two pronunciation formats supported:**
+  - Phoneme format: `` `[.1hE.0lo] ``
+  - Spelled-out format: `heh loe` (used for abbreviations and acronyms)
 
-```
-C:\Users\YourUsername\AppData\Roaming\nvda\addons\Eloquence\synthDrivers\
-```
+### Word Variation Generator
 
-To enable Eloquence on  start-up, secure, and log-on screens in NVDA 64-bit, manually copy the file `eloquence_host32.exe` to:
+When you select an entry in the dictionary editor, an **Add Variations** button appears. This opens a variation generator dialog that helps you quickly add related word forms from a root entry.
 
-```
-C:\Program Files\NVDA\systemConfig\addons\Eloquence\synthDrivers\
-```
+- Auto-generates common prefixed and suffixed forms of the selected root word
+- All suggestions are unchecked by default so you choose only what you want
+- Each variation shows its word and phoneme side by side
+- Phoneme of each variation can be reviewed and edited individually before adding
+- Custom variations can be added through a separate dialog window
+- Space bar or click toggles the checkbox for each variation
 
-If you have an admin-level user account, the correct source path may instead be:
+### IPC Responsiveness Improvement
 
-```
-C:\Users\admin_your-username\AppData\Roaming\nvda\addons\Eloquence\synthDrivers\
-```
+The synthesizer now uses fire-and-forget IPC calls for commands that do not require a response, such as addText, insertIndex, and temporary prosody changes. This significantly reduces latency during navigation and typing, making the addon feel as responsive as other synthesizers.
 
-After copying the file, Eloquence should load normally on secure and log-on screens.
+### Audio Device Switching Fix
 
-## Building
+Fixed a bug where switching audio output devices (for example from Bluetooth headphones to laptop speakers) would not take effect until NVDA was restarted. The synthesizer now properly reinitializes when the audio device changes.
 
-• have the Python Install Manager installed and working from: https://www.python.org/ftp/python/pymanager/python-manager-25.0.msix
+---
 
-• Install Python 3.13-32 using py install 3.13-32
+## Installation
 
-• Install pyinstaller using py -3.13-32 -m pip install pyinstaller
+1. Download the latest `.nvda-addon` file from the [Releases](../../releases) page
+2. Open it with NVDA to install
+3. Restart NVDA when prompted
 
-• run git submodule init
+---
 
-• run build.cmd
+## Reporting bugs
 
-• You should then have a fully built NVDA addon
+If you find a bug, please [open an Issue](../../issues) and include:
+- A description of what happened
+- Steps to reproduce
+- Your NVDA version
+- Your Windows version
+- The NVDA log file if possible (`NVDA menu > Tools > View log`)
 
+## Contributing
+
+Pull requests are welcome. If you want to propose a change, please open an Issue first to discuss it so we can make sure it fits the direction of the fork.
+
+---
+
+## Credits
+
+- Original addon by [fastfinge](https://github.com/fastfinge) and contributors
+- Improvements in this fork by crucio2211
